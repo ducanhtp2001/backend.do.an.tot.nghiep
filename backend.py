@@ -1,11 +1,9 @@
 import json
-from flask import Flask
+from flask import Flask, session, jsonify
 from flask import url_for, request
 import pandas as pd
 import pymongo
 from pymongo.errors import DuplicateKeyError
-from youtubesearchpython import *
-from youtube_transcript_api import YouTubeTranscriptApi
 from flask_socketio import SocketIO
 import logging
 
@@ -50,7 +48,7 @@ def register():
         except Exception as e: logging.error(f'Error occurred: {e}')
 
         print(user_col.find_one({'_id': _id}))
-        return user_col.find_one({'_id': _id})
+        return user_col.find_one({'_id': _id}), 200
 
     
 
@@ -64,25 +62,20 @@ def login():
             passWord = request.json['passWord']
         except: return "missing arg"
 
-        user = user_col.find_one({'userName': userName, 'passWord': passWord})
+        print(userName + "-" + passWord)
 
-        account = {
-                "id": "",
-                "userName": userName,
-                "passWord": passWord,
-                "email": None,
-                "follow": [],
-                }  
+        user = user_col.find_one({'userName': userName, 'passWord': passWord}), 200
+        print(user)
 
         if user:
             return user
         else:
-            return account
+            return None
 
     
 
 def start():
-    socketio.run(app, host="0.0.0.0", port=5000)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
     
 if __name__ == '__main__':
     start()
