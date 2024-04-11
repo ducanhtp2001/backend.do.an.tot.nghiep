@@ -1,15 +1,24 @@
 import json
-from flask import Flask, session, jsonify
+import os
+from flask import Flask, flash, redirect, session, jsonify
 from flask import url_for, request
 import pandas as pd
 import pymongo
 from pymongo.errors import DuplicateKeyError
 from flask_socketio import SocketIO
+from werkzeug.utils import secure_filename
 import logging
+
+UPLOAD_FOLDER = 'D:/com.backend.do.an.tot.nghiep/file_folder'
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'DUCANH_DATN'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 socketio = SocketIO(app)
+
+
+
 
 myClient = pymongo.MongoClient("mongodb://localhost:27017/")
 
@@ -48,7 +57,7 @@ def register():
         except Exception as e: logging.error(f'Error occurred: {e}')
 
         print(user_col.find_one({'_id': _id}))
-        return user_col.find_one({'_id': _id}), 200
+        return user_col.find_one({'_id': _id})
 
     
 
@@ -64,13 +73,44 @@ def login():
 
         print(userName + "-" + passWord)
 
-        user = user_col.find_one({'userName': userName, 'passWord': passWord}), 200
+        user = user_col.find_one({'userName': userName, 'passWord': passWord})
         print(user)
 
         if user:
+            session['name'] = user['_id']
             return user
         else:
             return None
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+
+        if 'file' not in request.files:
+            print('No file part')
+            return {'msg': 'No file part'}
+        file = request.files['file']
+        description = request.form.get('description')
+        name = request.form.get('fileName')
+        id = request.form.get('id')
+
+        print("description: ", description)
+        print("name: ", name)
+        print("id: ", id)
+
+        if file.filename == '':
+            print('No selected file')
+            return {'msg': 'No selected file'}
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filename = name
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return {'msg': 'File uploaded successfully'}
+    return {'msg': 'File uploaded false'}
 
     
 
