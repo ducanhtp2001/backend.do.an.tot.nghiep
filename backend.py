@@ -5,9 +5,12 @@ from flask import url_for, request
 import pandas as pd
 import pymongo
 from pymongo.errors import DuplicateKeyError
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 from werkzeug.utils import secure_filename
 import logging
+import redis
+
+r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 UPLOAD_FOLDER = 'D:/com.backend.do.an.tot.nghiep/file_folder'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
@@ -16,8 +19,6 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'DUCANH_DATN'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 socketio = SocketIO(app)
-
-
 
 
 myClient = pymongo.MongoClient("mongodb://localhost:27017/")
@@ -34,7 +35,7 @@ def register():
         userName = ""
         passWord = ""
         try: 
-            _id = request.json['_id']
+            _id = request.json['id']
             userName = request.json['userName']
             passWord = request.json['passWord']
         except: return "missing arg"
@@ -58,8 +59,6 @@ def register():
 
         print(user_col.find_one({'_id': _id}))
         return user_col.find_one({'_id': _id})
-
-    
 
 @app.post('/login')
 def login():
@@ -112,10 +111,29 @@ def upload_file():
             return {'msg': 'File uploaded successfully'}
     return {'msg': 'File uploaded false'}
 
-    
+@socketio.on('connect')
+def socket_connect(auth):
+    emit('connect', {'data': 'Connected'})
+
+@socketio.on('disconnect')
+def socket_disconnect():
+    emit("disconnect", {'data': 'disconnect'})
+
+@socketio.on('connect_error')
+def socket_connect_err():
+    emit("disconnect", {'data': 'connect err'})
+
+@socketio.on('login')
+def socket_login(data):
+    room = data['room_id'] 
+    id = data['sender_id']
+    msg = data['msg']
+    print(f"data: {data}")
+    print(f"id: {id} send to room: {room}: {msg}")
+    emit("on_receive", data, to=room)
 
 def start():
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True, debug=True)
     
 if __name__ == '__main__':
     start()
