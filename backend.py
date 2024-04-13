@@ -1,19 +1,19 @@
 import json
 import os
-from flask import Flask, flash, redirect, session, jsonify
+from flask import Flask, flash, redirect, send_from_directory, session, jsonify
 from flask import url_for, request
-import pandas as pd
 import pymongo
 from pymongo.errors import DuplicateKeyError
 from flask_socketio import SocketIO, emit
 from werkzeug.utils import secure_filename
 import logging
 import redis
+import handler
 
 r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 UPLOAD_FOLDER = 'D:/com.backend.do.an.tot.nghiep/file_folder'
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'DUCANH_DATN'
@@ -35,7 +35,7 @@ def register():
         userName = ""
         passWord = ""
         try: 
-            _id = request.json['id']
+            _id = request.json['_id']
             userName = request.json['userName']
             passWord = request.json['passWord']
         except: return "missing arg"
@@ -46,6 +46,7 @@ def register():
                 "passWord": passWord,
                 "email": None,
                 "follow": [],
+                "avatar": "default_avatar.png"
                 }    
 
         try:
@@ -77,6 +78,7 @@ def login():
 
         if user:
             session['name'] = user['_id']
+            print("session: " + session['name'])
             return user
         else:
             return None
@@ -131,6 +133,18 @@ def socket_login(data):
     print(f"data: {data}")
     print(f"id: {id} send to room: {room}: {msg}")
     emit("on_receive", data, to=room)
+
+@app.route('/start_task')
+def start_task():
+    handler.long_running_task.delay()
+
+@app.route('/get_avatar/<filename>', methods=['GET'])
+def get_avatar(filename):
+    directory = 'D:/com.backend.do.an.tot.nghiep/avatar'
+    try:
+        return send_from_directory(directory, filename)
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 def start():
     socketio.run(app, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True, debug=True)
