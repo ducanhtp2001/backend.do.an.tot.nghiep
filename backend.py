@@ -1,10 +1,9 @@
 import json
 import os
-from flask import Flask, flash, redirect, send_from_directory, session, jsonify
-from flask import url_for, request
+from flask import *
 import pymongo
 from pymongo.errors import DuplicateKeyError
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room
 from werkzeug.utils import secure_filename
 import logging
 import redis
@@ -44,9 +43,9 @@ def register():
                 "_id": _id,
                 "userName": userName,
                 "passWord": passWord,
-                "email": None,
+                "email": "",
                 "follow": [],
-                "avatar": "default_avatar.png"
+                "avatar": "/get_avatar/default_avatar.png"
                 }    
 
         try:
@@ -95,21 +94,44 @@ def upload_file():
             print('No file part')
             return {'msg': 'No file part'}
         file = request.files['file']
-        description = request.form.get('description')
+        title, isTableStr, isPublicStr = request.form.get('description').split("-")
         name = request.form.get('fileName')
-        id = request.form.get('id')
+        idUser = request.form.get('id')
+        isTable = False
+        isPublic = False
+        if isTableStr == "true": isTable = True
+        if isPublicStr == "true": isPublic = True
 
-        print("description: ", description)
+        print("description: ", title, isTableStr, isPublicStr)
         print("name: ", name)
-        print("id: ", id)
+        print("id: ", idUser)
 
         if file.filename == '':
             print('No selected file')
             return {'msg': 'No selected file'}
         if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            filename = name
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            
+
+            try:
+                filename = secure_filename(file.filename)
+                filename = name
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+                fileData = {
+                "_id": filename,
+                "idUser": idUser,
+                "title": title,
+                "recognizeText": "",
+                "summaryText": "",
+                "state": False,
+                "isPublic": isPublic,
+                "isTable": isTable,
+                "evaluation": None,
+                "comments": None
+                }    
+
+                if fileData: file_col.insert_one(fileData)
+            except: {'msg': 'File uploaded false'}
             return {'msg': 'File uploaded successfully'}
     return {'msg': 'File uploaded false'}
 
@@ -127,12 +149,12 @@ def socket_connect_err():
 
 @socketio.on('login')
 def socket_login(data):
-    room = data['room_id'] 
-    id = data['sender_id']
-    msg = data['msg']
+    id = data['id']
+    join_room(id)
     print(f"data: {data}")
-    print(f"id: {id} send to room: {room}: {msg}")
-    emit("on_receive", data, to=room)
+    print(f"id: {id} join to room: {id}")
+    msg = "Login Success"
+    emit("on_login_receive", {'msg':msg}, to=id)
 
 @app.route('/start_task')
 def start_task():
@@ -142,6 +164,7 @@ def start_task():
 def get_avatar(filename):
     directory = 'D:/com.backend.do.an.tot.nghiep/avatar'
     try:
+        print(send_from_directory(directory, filename))
         return send_from_directory(directory, filename)
     except Exception as e:
         return jsonify({"error": str(e)})
