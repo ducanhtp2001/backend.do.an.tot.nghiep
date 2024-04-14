@@ -7,7 +7,7 @@ from flask_socketio import SocketIO, emit, join_room
 from werkzeug.utils import secure_filename
 import logging
 import redis
-import handler
+
 
 r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
@@ -17,7 +17,13 @@ ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'DUCANH_DATN'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config.update(
+    CELERY_BROKER_URL='redis://localhost:6379/0',
+    CELERY_RESULT_BACKEND='redis://localhost:6379/0'
+)
 socketio = SocketIO(app)
+
+import handler
 
 isHandling = False
 
@@ -163,16 +169,20 @@ def socket_login(data):
     msg = "Login Success"
     emit("on_login_receive", {'msg':msg}, to=id)
 
-@app.route('/start_task')
+@socketio.on('start_task')
 def start_task():
+    global isHandling
+    print('on task')
     if (not isHandling):
         isHandling = True
         handler.file_execute_task(onExecuteDone=notify_file_executed_done, onDone=onDoneAll).delay()
 
-def notify_file_executed_done(userId, fileId):
-    emit("on_file_execute_done", {'fileId': fileId}, to=userId)
+def notify_file_executed_done(userId, fileTitle):
+    print('on Done execute file')
+    emit("on_file_execute_done", {'fileTitle': fileTitle}, to=userId)
 
 def onDoneAll():
+    global isHandling
     isHandling = False
 
 @app.route('/get_avatar/<filename>', methods=['GET'])
