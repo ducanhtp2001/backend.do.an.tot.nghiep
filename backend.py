@@ -7,6 +7,7 @@ from flask_socketio import SocketIO, emit, join_room
 from werkzeug.utils import secure_filename
 import logging
 import redis
+import db_manager as db
 
 
 r = redis.Redis(host='localhost', port=6379, decode_responses=True)
@@ -89,6 +90,17 @@ def login():
             return user
         else:
             return None
+
+@app.post('/get-private-file')
+def get_private_file_by_user_id():
+    if request.method == 'POST':
+        idUser = ""
+        try: 
+            idUser = request.json['_id']
+        except: return "missing arg" 
+
+        print('idUser to get private file: ', idUser)
+        return jsonify(db.get_file_by_id_user(idUser))
 
 def allowed_file(filename):
     return '.' in filename and \

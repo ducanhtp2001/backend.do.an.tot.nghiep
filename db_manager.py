@@ -22,6 +22,17 @@ def update_file_after_execute(fileId, origin, summary):
     print(' ============= update db', query)
     file_col.update_one(query, new_data)
 
+def get_file_by_id_user(idUser):
+    query = {'idUser': idUser, 'state': True}
+    files = file_col.find(query)
+    files_list = list(files)
+    
+    # print(files_list)
+    print('find: ', len(files_list))
+    return files_list
 
+
+
+# get_file_by_id_user("1713019963759")
 
 # get_file_to_execute()
