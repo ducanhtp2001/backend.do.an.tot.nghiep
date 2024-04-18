@@ -100,7 +100,18 @@ def get_private_file_by_user_id():
         except: return "missing arg" 
 
         print('idUser to get private file: ', idUser)
-        return jsonify(db.get_file_by_id_user(idUser))
+        return jsonify(db.get_private_file_by_id_user(idUser))
+    
+@app.post('/get-public-file')
+def get_public_file_by_user_id():
+    if request.method == 'POST':
+        idUser = ""
+        try: 
+            idUser = request.json['_id']
+        except: return "missing arg" 
+
+        print('idUser to get public file: ', idUser)
+        return jsonify(db.get_publish_file_by_id_user(idUser))
 
 def allowed_file(filename):
     return '.' in filename and \

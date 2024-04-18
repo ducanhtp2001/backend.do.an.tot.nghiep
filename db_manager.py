@@ -22,8 +22,17 @@ def update_file_after_execute(fileId, origin, summary):
     print(' ============= update db', query)
     file_col.update_one(query, new_data)
 
-def get_file_by_id_user(idUser):
-    query = {'idUser': idUser, 'state': True}
+def get_private_file_by_id_user(idUser):
+    query = {'idUser': idUser, 'state': True, 'isPublic': False}
+    files = file_col.find(query)
+    files_list = list(files)
+    
+    # print(files_list)
+    print('find: ', len(files_list))
+    return files_list
+
+def get_publish_file_by_id_user(idUser):
+    query = {'idUser': idUser, 'state': True, 'isPublic': False}
     files = file_col.find(query)
     files_list = list(files)
     
