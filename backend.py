@@ -198,7 +198,7 @@ def start_task():
     print('on task')
     if (not isHandling):
         isHandling = True
-        handler.file_execute_task(onExecuteDone=notify_file_executed_done, onDone=onDoneAll).delay()
+        handler.file_execute_task(onExecuteDone=notify_file_executed_done, onDone=onDoneAll)
 
 def notify_file_executed_done(userId, fileTitle):
     print('on Done execute file')
