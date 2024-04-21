@@ -100,7 +100,7 @@ def get_private_file_by_user_id():
         except: return "missing arg" 
 
         print('idUser to get private file: ', idUser)
-        return jsonify(db.get_private_file_by_id_user(idUser))
+        return jsonify(db.get_file_executed_by_id_user(idUser, False))
     
 @app.post('/get-public-file')
 def get_public_file_by_user_id():
@@ -111,7 +111,25 @@ def get_public_file_by_user_id():
         except: return "missing arg" 
 
         print('idUser to get public file: ', idUser)
-        return jsonify(db.get_publish_file_by_id_user(idUser))
+        return jsonify(db.get_file_executed_by_id_user(idUser, True))
+
+@app.post('/post-comment')
+def post_comment():
+    if request.method == 'POST':
+        idUser = ""
+        id = ""
+        type = ""
+        comment = ""
+        try: 
+            id = request.json['_id']
+            idUser = request.json['userId']
+            type = request.json['type']
+            comment = request.json['comment']
+        except: return "missing arg" 
+
+        print('post comment: : ', id, idUser, type, comment)
+        return jsonify({'message': 'Comment posted successfully'})
+        # return jsonify(db.get_file_executed_by_id_user(idUser, True))
 
 def allowed_file(filename):
     return '.' in filename and \
