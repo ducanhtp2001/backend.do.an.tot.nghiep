@@ -35,6 +35,7 @@ myDb = myClient["my_datn_db"]
 
 user_col = myDb['user_col']
 file_col = myDb['file_col']
+cmt_col = myDb['cmt_col']
 
 @app.post('/register')
 def register():
@@ -117,18 +118,51 @@ def get_public_file_by_user_id():
 def post_comment():
     if request.method == 'POST':
         idUser = ""
+        idFile = ""
+        idComment = ""
         id = ""
         type = ""
         comment = ""
         try: 
             id = request.json['_id']
             idUser = request.json['userId']
+            idFile = request.json['fileId']
             type = request.json['type']
             comment = request.json['comment']
+            try:
+                idComment = request.json['commentId']
+            except: pass
         except: return "missing arg" 
 
-        print('post comment: : ', id, idUser, type, comment)
-        return jsonify({'message': 'Comment posted successfully'})
+        print('post comment: : ', id, idUser, idFile, idComment, type, comment)
+
+        user = db.get_user_by_id(idUser)
+
+        print("============== user post cmt: ", user)
+
+        commentEntity = {
+            "_id": id,
+            "idUser": idUser,
+            "idFile": idFile,
+            "idComment": idComment if (idComment != "") else None,
+            "type": type,
+            "comment": comment,
+            "avatar": user['avatar'],
+            "userName": user['userName'],
+            "votes": [],
+            "replies": []
+        }
+
+        result = None
+
+        try:
+            result = db.insert_comment(commentEntity)
+        except: pass
+
+        if result:
+            return commentEntity
+        else: return None
+        # return jsonify({'message': 'Comment posted successfully'})
         # return jsonify(db.get_file_executed_by_id_user(idUser, True))
 
 def allowed_file(filename):

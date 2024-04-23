@@ -31,6 +31,24 @@ def get_file_executed_by_id_user(idUser, isPublic):
     print('find: ', len(files_list))
     return files_list
 
+def get_user_by_id(idUser):
+    query = {'_id': idUser}
+
+    print(' ---------------- id: ', idUser)
+
+    return user_col.find_one(query)
+
+
+def insert_comment(commentEntity):
+    query = {"_id": commentEntity['idFile']}
+    update = {"$push": {"comments": commentEntity}}
+    try:
+        result = file_col.update_one(query, update)
+        return result.matched_count > 0
+    except:
+        return False
+
+
 
 
 
