@@ -1,5 +1,6 @@
 import pymongo
 from pymongo.errors import DuplicateKeyError
+import enum_class
 
 myClient = pymongo.MongoClient("mongodb://localhost:27017/")
 
@@ -7,6 +8,33 @@ myDb = myClient["my_datn_db"]
 
 user_col = myDb['user_col']
 file_col = myDb['file_col']
+# comment_col = myDb['file_col']
+# like_col = myDb['file_col']
+
+def insert_one_to_db(data, type):
+    if type == enum_class.collection.USER:
+        return user_col.insert_one(data).acknowledged
+    elif type == enum_class.collection.FILE:
+        return file_col.insert_one(data).acknowledged
+    # elif type == enum_class.collection.COMMENT:
+    #     return comment_col.insert_one(data).acknowledged
+    # elif type == enum_class.collection.LIKE:
+    #     return like_col.insert_one(data).acknowledged
+    
+def find_one_from_db(id, type):
+
+    query = query = {'_id': id}
+
+    if type == enum_class.collection.USER:
+        data = user_col.find_one(query)
+    elif type == enum_class.collection.FILE:
+        data =  file_col.find_one(query)
+    # elif type == enum_class.collection.COMMENT:
+    #     data =  comment_col.find_one(query)
+    # elif type == enum_class.collection.LIKE:
+    #     data =  like_col.find_one(query)
+    if data: return data
+    else: return None
 
 def get_file_to_execute():
     print('on query')

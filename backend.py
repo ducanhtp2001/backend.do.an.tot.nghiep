@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 import logging
 import redis
 import db_manager as db
+import enum_class
 
 
 r = redis.Redis(host='localhost', port=6379, decode_responses=True)
@@ -112,6 +113,7 @@ def get_public_file_by_user_id():
         except: return "missing arg" 
 
         print('idUser to get public file: ', idUser)
+
         return jsonify(db.get_file_executed_by_id_user(idUser, True))
 
 @app.post('/post-comment')
@@ -196,13 +198,11 @@ def upload_file():
             print('No selected file')
             return {'msg': 'No selected file'}
         if file and allowed_file(file.filename):
-            
 
             try:
                 filename = secure_filename(fileName)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 print("fileName save: ", filename)
-
 
                 fileData = {
                 "_id": fileId,
@@ -214,13 +214,15 @@ def upload_file():
                 "state": False,
                 "isPublic": isPublic,
                 "isTable": isTable,
-                "evaluation": [],
+                "likes": [],
                 "comments": []
-                }    
+                }  
 
-                if fileData: file_col.insert_one(fileData)
+                # if fileData: file_col.insert_one(fileData)
+                if db.insert_one_to_db(fileData, enum_class.collection.FILE):
+                    return {'msg': 'File uploaded successfully'}
             except: {'msg': 'File uploaded false'}
-            return {'msg': 'File uploaded successfully'}
+            
     return {'msg': 'File uploaded false'}
 
 @socketio.on('connect')
