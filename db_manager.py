@@ -75,6 +75,60 @@ def insert_comment(commentEntity):
         return result.matched_count > 0
     except:
         return False
+    
+def insert_or_delete_like(evaluationEntity):
+    query = {"_id": evaluationEntity['idFile']}
+    update = {"$push": {"likes": evaluationEntity}}
+    try:
+        result = file_col.update_one(query, update)
+        return result.matched_count > 0
+    except:
+        return False
+    
+def insert_or_delete_like(evaluationEntity):
+    query = {"_id": evaluationEntity['idFile']}
+
+    if evaluationEntity['type'] == 'FILE':
+        evaluation_query = {"likes.idUser": evaluationEntity['idUser']} 
+        try:
+            existing_evaluation = file_col.find_one(evaluation_query)
+
+            if existing_evaluation:
+                print(' ======= xoa like file ======= ', evaluationEntity)
+                update = {"$pull": {"likes": {"idUser": evaluationEntity['idUser']}}}
+                result = file_col.update_one(query, update)
+                return result.modified_count > 0
+
+            else:
+                print(' ======= like file ======= ', evaluationEntity)
+                update = {"$push": {"likes": evaluationEntity}}
+                result = file_col.update_one(query, update)
+                return result.matched_count > 0
+
+        except Exception as e:
+            print(e)
+            return False
+    elif evaluationEntity['type'] == 'COMMENT':    
+        evaluation_query = {"likes.idUser": evaluationEntity['idUser']} 
+        try:
+            existing_evaluation = file_col.find_one(evaluation_query)
+
+            if existing_evaluation:
+                print(' ======= xoa like file ======= ', evaluationEntity)
+                update = {"$pull": {"likes": {"idUser": evaluationEntity['idUser']}}}
+                result = file_col.update_one(query, update)
+                return result.modified_count > 0
+
+            else:
+                print(' ======= like file ======= ', evaluationEntity)
+                update = {"$push": {"likes": evaluationEntity}}
+                result = file_col.update_one(query, update)
+                return result.matched_count > 0
+
+        except Exception as e:
+            print(e)
+            return False
+
 
 
 

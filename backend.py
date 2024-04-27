@@ -121,22 +121,20 @@ def post_comment():
     if request.method == 'POST':
         idUser = ""
         idFile = ""
-        idComment = ""
+        toUserId = ""
         id = ""
-        type = ""
-        comment = ""
+        content = ""
         try: 
             id = request.json['_id']
-            idUser = request.json['userId']
-            idFile = request.json['fileId']
-            type = request.json['type']
-            comment = request.json['comment']
+            idUser = request.json['idUser']
+            idFile = request.json['idFile']
+            content = request.json['content']
             try:
-                idComment = request.json['commentId']
+                toUserId = request.json['toUserId']
             except: pass
         except: return "missing arg" 
 
-        print('post comment: : ', id, idUser, idFile, idComment, type, comment)
+        print('post comment: : ', id, idUser, idFile, toUserId, content)
 
         user = db.get_user_by_id(idUser)
 
@@ -145,14 +143,12 @@ def post_comment():
         commentEntity = {
             "_id": id,
             "idUser": idUser,
-            "idFile": idFile,
-            "idComment": idComment if (idComment != "") else None,
-            "type": type,
-            "comment": comment,
             "avatar": user['avatar'],
             "userName": user['userName'],
-            "votes": [],
-            "replies": []
+            "idFile": idFile,
+            "toUserId": toUserId,
+            "content": content,            
+            "likes": [],
         }
 
         result = None
@@ -166,6 +162,50 @@ def post_comment():
         else: return None
         # return jsonify({'message': 'Comment posted successfully'})
         # return jsonify(db.get_file_executed_by_id_user(idUser, True))
+
+
+@app.post('/post-like')
+def post_like():
+    if request.method == 'POST':
+        id = ""
+        idUser = ""
+        idFile = ""
+        idComment = ""
+        type = ""
+        try: 
+            id = request.json['_id']
+            idUser = request.json['idUser']
+            idFile = request.json['idFile']
+            idComment = request.json['idComment']
+            type = request.json['type']
+        except: return "missing arg" 
+
+        print('post like: : ', id, idUser, idFile, idComment, type)
+
+        user = db.get_user_by_id(idUser)
+
+        print("============== user post like: ", user)
+
+        evaluationEntity = {
+            "_id": id,
+            "idUser": idUser,
+            "avatar": user['avatar'],
+            "userName": user['userName'],
+            "idFile": idFile,
+            "idComment": idComment,
+            "type": type,
+        }
+
+        result = None
+
+        try:
+            result = db.insert_or_delete_like(evaluationEntity)
+        except: pass
+
+        if result:
+            return evaluationEntity
+        else: return None
+
 
 def allowed_file(filename):
     return '.' in filename and \
