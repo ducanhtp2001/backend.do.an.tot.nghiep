@@ -201,6 +201,45 @@ def post_like():
         return jsonify({'error': str(e)})
     return jsonify({'error': 'Unknown error occurred'})
 
+@app.post('/delete-file')
+def delete_file():
+    try: 
+        id = request.json['_id']
+    except KeyError:
+        return jsonify({'error': 'Missing required argument(s)'})
+
+    print('...........delete file: ', id)
+
+    result = db.delete_file_by_id(id)
+
+    if result:
+        try:
+            file_path = os.path.join(UPLOAD_FOLDER, f"{id}.pdf")
+            os.remove(file_path)
+            print(f"Deleted {file_path} success")
+        except OSError as e: 
+            print(f"err delete: {e.filename}")
+        except Exception as ex:
+            print(f"err: {ex}")
+        return {"status": result, "msg": "Delete Success"}
+    else :
+        return {"status": result, "msg": "Delete Failure"}
+    
+@app.post('/change-state')
+def change_state():
+    try: 
+        id = request.json['_id']
+    except KeyError:
+        return jsonify({'error': 'Missing required argument(s)'})
+
+    print('...........change state file: ', id)
+
+    result = db.change_state(id)
+
+    if result:
+        return {"status": result, "msg": "Change State Success"}
+    else :
+        return {"status": result, "msg": "Change State Failure"}
 
 def allowed_file(filename):
     return '.' in filename and \

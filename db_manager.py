@@ -50,6 +50,22 @@ def update_file_after_execute(fileId, origin, summary):
     print(' ============= update db', query)
     file_col.update_one(query, new_data)
 
+def delete_file_by_id(fileId):  
+    result = file_col.delete_one({"_id": fileId})
+    print('============= delete file id:', fileId)
+    if result.deleted_count == 1:
+        return True
+    else: 
+        return False
+    
+def change_state(fileId):  
+    result = file_col.find_one_and_update({"_id": fileId}, {"$set": {"isPublic": {"$not": "$isPublic"}}})
+    print('============= change state file id:', fileId)
+    if result is not None:
+        return True
+    else: 
+        return False
+
 def get_file_executed_by_id_user(idUser, isPublic):
     query = {'idUser': idUser, 'state': True, 'isPublic': isPublic}
     files = file_col.find(query)
@@ -76,14 +92,14 @@ def insert_comment(commentEntity):
     except:
         return False
     
-def insert_or_delete_like(evaluationEntity):
-    query = {"_id": evaluationEntity['idFile']}
-    update = {"$push": {"likes": evaluationEntity}}
-    try:
-        result = file_col.update_one(query, update)
-        return result.matched_count > 0
-    except:
-        return False
+# def insert_or_delete_like(evaluationEntity):
+#     query = {"_id": evaluationEntity['idFile']}
+#     update = {"$push": {"likes": evaluationEntity}}
+#     try:
+#         result = file_col.update_one(query, update)
+#         return result.matched_count > 0
+#     except:
+#         return False
     
 def insert_or_delete_like(evaluationEntity):
     # query = {"_id": evaluationEntity['idFile']}
