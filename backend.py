@@ -166,45 +166,40 @@ def post_comment():
 
 @app.post('/post-like')
 def post_like():
-    if request.method == 'POST':
-        id = ""
-        idUser = ""
-        idFile = ""
-        idComment = ""
-        type = ""
-        try: 
-            id = request.json['_id']
-            idUser = request.json['idUser']
-            idFile = request.json['idFile']
-            idComment = request.json['idComment']
-            type = request.json['type']
-        except: return "missing arg" 
+    try: 
+        id = request.json['_id']
+        idUser = request.json['idUser']
+        idFile = request.json['idFile']
+        idComment = request.json['idComment']
+        type = request.json['type']
+    except KeyError:
+        return jsonify({'error': 'Missing required argument(s)'})
 
-        print('post like: : ', id, idUser, idFile, idComment, type)
+    print('post like: : ', id, idUser, idFile, idComment, type)
 
-        user = db.get_user_by_id(idUser)
+    user = db.get_user_by_id(idUser)
 
-        print("============== user post like: ", user)
+    print("============== user post like: ", user)
 
-        evaluationEntity = {
-            "_id": id,
-            "idUser": idUser,
-            "avatar": user['avatar'],
-            "userName": user['userName'],
-            "idFile": idFile,
-            "idComment": idComment,
-            "type": type,
-        }
+    evaluationEntity = {
+        "_id": id,
+        "idUser": idUser,
+        "avatar": user['avatar'],
+        "userName": user['userName'],
+        "idFile": idFile,
+        "idComment": idComment,
+        "type": type,
+    }
 
-        result = None
-
-        try:
-            result = db.insert_or_delete_like(evaluationEntity)
-        except: pass
-
+    try:
+        result = db.insert_or_delete_like(evaluationEntity)
         if result:
-            return evaluationEntity
-        else: return None
+            return jsonify(evaluationEntity)
+        else:
+            return jsonify({'error': 'Failed to process like'})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+    return jsonify({'error': 'Unknown error occurred'})
 
 
 def allowed_file(filename):
