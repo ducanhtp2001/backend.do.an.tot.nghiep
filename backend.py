@@ -294,13 +294,22 @@ def upload_file():
                 "likes": [],
                 "comments": []
                 }  
-
                 # if fileData: file_col.insert_one(fileData)
                 if db.insert_one_to_db(fileData, enum_class.collection.FILE):
                     return {'msg': 'File uploaded successfully'}
             except: {'msg': 'File uploaded false'}
-            
     return {'msg': 'File uploaded false'}
+
+@app.post('/download')
+def download_file():
+    try: 
+        id = request.json['_id']
+    except KeyError:
+        return jsonify({'error': 'Missing required argument(s)'})
+
+    file_path = os.path.join(UPLOAD_FOLDER, f"{id}.pdf")
+    print(file_path)
+    return send_file(file_path, as_attachment=True)
 
 @socketio.on('connect')
 def socket_connect(auth):
