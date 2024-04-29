@@ -166,12 +166,15 @@ def post_comment():
 
 @app.post('/post-like')
 def post_like():
+    idComment = None
     try: 
         id = request.json['_id']
         idUser = request.json['idUser']
         idFile = request.json['idFile']
-        idComment = request.json['idComment']
         type = request.json['type']
+        try:
+            idComment = request.json['idComment']
+        except: pass
     except KeyError:
         return jsonify({'error': 'Missing required argument(s)'})
 

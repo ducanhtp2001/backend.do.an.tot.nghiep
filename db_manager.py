@@ -105,35 +105,42 @@ def insert_or_delete_like(evaluationEntity):
     # query = {"_id": evaluationEntity['idFile']}
 
     if evaluationEntity['type'] == 'FILE':
-        evaluation_query = {"likes.idUser": evaluationEntity['idUser']} 
+        evaluation_query = {"likes": {"$elemMatch": {"idUser": evaluationEntity['idUser']}}} 
 
         try:
             existing_evaluation = file_col.find_one(evaluation_query)
-
+            query = {"_id": evaluationEntity['idFile']}
             if existing_evaluation:
                 print(' ======= xoa like file ======= ', evaluationEntity)
                 update = {"$pull": {"likes": {"idUser": evaluationEntity['idUser']}}}
-                result = file_col.update_one(evaluation_query, update)
+                result = file_col.update_one(query, update)
                 return result.modified_count > 0
 
             else:
                 print(' ======= like file ======= ', evaluationEntity)
                 update = {"$push": {"likes": evaluationEntity}}
-                result = file_col.update_one(evaluation_query, update)
+                print("--------------- update query", update)
+                result = file_col.update_one(query, update)
                 return result.matched_count > 0
 
         except Exception as e:
             print(e)
             return False
     elif evaluationEntity['type'] == 'COMMENT':    
-        evaluation_query = {"_id": evaluationEntity['idFile'],
-                "comments._id": evaluationEntity['idComment'],
-                "comments.likes": {"$elemMatch": {"idUser": evaluationEntity['idUser']}}}
+        # evaluation_query = {"_id": evaluationEntity['idFile'],
+        #         "comments._id": evaluationEntity['idComment'],
+        #         "comments.likes": {"$elemMatch": {"idUser": evaluationEntity['idUser']}}}
+        
+        evaluation_query = {"_id": evaluationEntity['idFile'], 
+         "comments": {"$elemMatch": {"_id": evaluationEntity['idComment'], 
+                                     "likes": {"$elemMatch": {"idUser": evaluationEntity['idUser']}}}}}
+
+        print(" ****************** ==  evaluation_query: ", evaluation_query)
         try:
             existing_evaluation = file_col.find_one(evaluation_query)
             query = {"_id": evaluationEntity['idFile'], "comments._id": evaluationEntity['idComment']}
             print("--------------- query", query)
-            if existing_evaluation:
+            if existing_evaluation is not None:
                 print(' ======= xoa like COMMENT ======= ', evaluationEntity)
                 update_action = { "$pull": {"comments.$.likes": {"idUser": evaluationEntity['idUser']}} }
                 print("--------------- update query", update_action)
@@ -142,8 +149,8 @@ def insert_or_delete_like(evaluationEntity):
 
             else:
                 print(' ======= like COMMENT ======= ', evaluationEntity)
-                update_action = {"$push": {"comments.$[elem].likes": evaluationEntity},
-                                 "array_filters": [{"elem._id": evaluationEntity['idComment']}]}
+                # update_action = {"$push": {"comments.$[elem].likes": evaluationEntity},
+                #                  "array_filters": [{"elem._id": evaluationEntity['idComment']}]}
                 update_action = { "$push": { "comments.$.likes": evaluationEntity } }
                 print("--------------- update query", update_action)
                 result = file_col.update_one(query, update_action)
@@ -159,10 +166,15 @@ def insert_or_delete_like(evaluationEntity):
         #         "comments.likes": {"$elemMatch": {"idUser": evaluationEntity['idUser']}
         #         }}
 
+# , 
+#                       "likes": {"$elemMatch": {"idUser": "1713019963759"}}
 
-# query = {"_id": "1713019963759_1714189620474", "comments._id": "1714234870667_1713019963759", "comments.likes": {"$elemMatch": {"idUser": "456"}}}
-# result = file_col.find_one(query)
+# mquery = {"_id": "1713019963759_1714189585546", 
+#          "comments": {"$elemMatch": {"_id": "1714290521831_1713019963759", 
+#                                      "likes": {"$elemMatch": {"idUser": "1713019963759"}}}}}
+# result = file_col.find_one(mquery)
 # print(result['comments'])
+        
         
 
 # query = {"_id": "1713019963759_1714189585546", "comments._id": "1714233396941_1713019963759"}
