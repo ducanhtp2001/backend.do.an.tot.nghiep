@@ -3,7 +3,7 @@ import os
 from flask import *
 import pymongo
 from pymongo.errors import DuplicateKeyError
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.utils import secure_filename
 import logging
 import redis
@@ -330,7 +330,7 @@ def socket_connect(auth):
 @socketio.on('disconnect')
 def socket_disconnect():
     print("disconnect")
-    emit("disconnect", {'data': 'disconnect'})
+    # emit("disconnect", {'data': 'disconnect'})
 
 @socketio.on('connect_error')
 def socket_connect_err():
@@ -344,6 +344,15 @@ def socket_login(data):
     print(f"id: {id} join to room: {id}")
     msg = "Login Success"
     emit("on_login_receive", {'msg':msg}, to=id)
+
+@socketio.on('logout')
+def socket_logout(data):
+    id = data['id']
+    leave_room(id)
+    print(f"data: {data}")
+    print(f"id: {id} leave to room: {id}")
+    msg = "logout Success"
+    emit("on_logout_receive", {'msg':msg}, to=id)
 
 @socketio.on('start_task')
 def start_task():
