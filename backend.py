@@ -116,6 +116,18 @@ def get_public_file_by_user_id():
 
         return jsonify(db.get_file_executed_by_id_user(idUser, True))
 
+@app.post('/get-profile')
+def get_profile_by_user_id():
+    if request.method == 'POST':
+        idUser = ""
+        try: 
+            idUser = request.json['_id']
+        except: return jsonify({"err": "missing arg"}) 
+        
+        print('idUser to get profile: ', idUser)
+        print("---------------------ket qua", db.get_profile_by_id_user(idUser))
+        return db.get_profile_by_id_user(idUser)
+
 @app.post('/post-comment')
 def post_comment():
     if request.method == 'POST':
@@ -317,6 +329,7 @@ def socket_connect(auth):
 
 @socketio.on('disconnect')
 def socket_disconnect():
+    print("disconnect")
     emit("disconnect", {'data': 'disconnect'})
 
 @socketio.on('connect_error')

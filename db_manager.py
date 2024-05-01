@@ -1,3 +1,4 @@
+from flask import jsonify
 import pymongo
 from pymongo.errors import DuplicateKeyError
 import enum_class
@@ -50,6 +51,68 @@ def update_file_after_execute(fileId, origin, summary):
     print(' ============= update db', query)
     file_col.update_one(query, new_data)
 
+def get_user_sub_by_id(idUser):
+    query = {'_id': idUser}
+    print(' ---------------- id: ', idUser)
+    try:
+        user = user_col.find_one(query)
+        userData = {
+            '_id': user['_id'],
+            'userName': user['userName'],
+            'avatar': user['avatar'],
+        }
+    except: return None
+    return userData
+
+# print(get_user_sub_by_id('1713019909558'))
+
+def get_profile_by_id_user(id):
+    query = {'_id': id}
+    user = user_col.find_one(query)
+    query = {'idUser': id, 'state': True, 'isPublic': True}
+    files = [doc for doc in file_col.find(query)]
+    query = {'follow': {'$in': [id]}}
+    followers = [per for per in user_col.find(query)]
+    followersResponse = []
+    for item in followers:
+        response = {
+            '_id': item['_id'],
+            'userName': item['userName'],
+            'avatar': item['avatar'],
+        }
+        followersResponse.append(response)
+
+    follows = []
+    for item in user['follow']:
+        tmp = get_user_sub_by_id(item)
+        if tmp is not None:
+            follows.append(tmp)
+
+    userData = {
+        '_id': user['_id'],
+        'userName': user['userName'],
+        'follows': follows,
+        'avatar': user['avatar'],
+        'followers': followersResponse,
+    }
+    profile = {
+        'user': userData,
+        'files': files
+    }
+    print("-------------------- size profile file: ", len(files))
+    return profile
+
+# print(get_profile_by_id_user("1713019909558"))
+
+
+# query = {'follow': {'$in': ['1713019963759']}}
+# followers = [per for per in user_col.find(query)]
+# print(followers)
+
+# query = {'idUser': "1713019963759", 'state': True, 'isPublic': True}
+# files = [doc for doc in file_col.find(query)]
+# print(len(files))
+
 def delete_file_by_id(fileId):  
     result = file_col.delete_one({"_id": fileId})
     print('============= delete file id:', fileId)
@@ -77,11 +140,8 @@ def get_file_executed_by_id_user(idUser, isPublic):
 
 def get_user_by_id(idUser):
     query = {'_id': idUser}
-
     print(' ---------------- id: ', idUser)
-
     return user_col.find_one(query)
-
 
 def insert_comment(commentEntity):
     query = {"_id": commentEntity['idFile']}
