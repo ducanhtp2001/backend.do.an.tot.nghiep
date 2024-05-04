@@ -9,6 +9,7 @@ myDb = myClient["my_datn_db"]
 
 user_col = myDb['user_col']
 file_col = myDb['file_col']
+cmt_col = myDb['cmt_col']
 # comment_col = myDb['file_col']
 # like_col = myDb['file_col']
 
@@ -65,6 +66,66 @@ def get_user_sub_by_id(idUser):
     return userData
 
 # print(get_user_sub_by_id('1713019909558'))
+
+def get_public_file_by_keyword(keyword, time, searchMode, existFilesId):
+
+    maxDoc = time * 10
+
+    if(keyword is not None):
+        if(searchMode == 1):
+            regex_query = {'$regex': keyword, '$options': 'i'}
+            pipeline = [
+                {'$match': {'state': True,'isPublic': True, '$or': [
+                                                                    {'title': regex_query},
+                                                                    {'summaryText': regex_query},
+                                                                    {'originText': regex_query}
+                                                                ]}},
+                {'$addFields': {'likesCount': {'$size': '$likes'},'commentsCount': {'$size': '$comments'}}},
+                {'$sort': {'likesCount': -1,'commentsCount': -1}},
+                {'$limit': maxDoc}
+            ]
+            cursor = file_col.aggregate(pipeline)
+        else: 
+            regex_query = {'$regex': keyword, '$options': 'i'}
+            pipeline = [
+                {'$match': {'state': True,'isPublic': True, '$or': [
+                                                                    {'title': regex_query},
+                                                                    {'summaryText': regex_query},
+                                                                    {'originText': regex_query}
+                                                                ]}},
+                {'$limit': maxDoc}
+            ]
+            cursor = file_col.aggregate(pipeline)
+    else:
+        if(searchMode == 1):
+            pipeline = [
+                {'$match': {'state': True,'isPublic': True}},
+                {'$addFields': {'likesCount': {'$size': '$likes'},'commentsCount': {'$size': '$comments'}}},
+                {'$sort': {'likesCount': -1,'commentsCount': -1}},
+                {'$limit': maxDoc}
+            ]
+            cursor = file_col.aggregate(pipeline)
+        else: 
+            pipeline = [
+                {'$match': {'state': True,'isPublic': True}},
+                {'$limit': maxDoc}
+            ]
+            cursor = file_col.aggregate(pipeline)
+
+    files = list(cursor)
+    globalFile = []
+    for item in files:
+        user = user_col.find_one({"_id":item['idUser']})
+        tmp = item
+        tmp['userName'] = user['userName']
+        tmp['avatar'] = user['avatar']
+        globalFile.append(tmp)
+        
+    return globalFile
+
+
+# print(((get_public_file_by_keyword("title 1", 0, 0, []))))
+       
 
 def get_profile_by_id_user(id):
     query = {'_id': id}

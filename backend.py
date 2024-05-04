@@ -128,6 +128,27 @@ def get_profile_by_user_id():
         print("---------------------ket qua", db.get_profile_by_id_user(idUser))
         return db.get_profile_by_id_user(idUser)
 
+
+# ///////////////////////////
+@app.post('/get-global-file')
+def get_global_file():
+    if request.method == 'POST':
+        keyword = None
+        time = ""
+        searchMode = ""
+        existFilesId = []
+        try: 
+            try:
+                keyword = request.json['keyword']
+            except: pass
+            time = request.json['time']
+            searchMode = request.json['searchMode']
+            existFilesId = request.json['existFilesId']
+        except: return jsonify({"err": "missing arg"}) 
+        
+        print('request file: ', keyword, time, searchMode, existFilesId)
+        return db.get_public_file_by_keyword(keyword, time, searchMode, existFilesId)
+
 @app.post('/post-comment')
 def post_comment():
     if request.method == 'POST':
@@ -369,6 +390,11 @@ def notify_file_executed_done(userId, fileTitle):
 def onDoneAll():
     global isHandling
     isHandling = False
+
+@app.errorhandler(500)
+def page_not_found(e):
+    # note that we set the 404 status explicitly
+    return {'msg':"Server err occur"}
 
 @app.route('/get_avatar/<filename>', methods=['GET'])
 def get_avatar(filename):
