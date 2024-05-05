@@ -65,6 +65,46 @@ def get_user_sub_by_id(idUser):
     except: return None
     return userData
 
+def get_follow_user_by_id(idUser):
+    query = {'_id': idUser}
+    print(' ---------------- request follow list by id: ', idUser)
+    user = user_col.find_one(query)
+    follows = user['follow']
+    response = []
+    for item in follows:
+        queryTmp = {'_id': item}
+        userTmp = user_col.find_one(queryTmp)
+        tmp = {}
+        tmp['_id'] = userTmp['_id']
+        tmp['userName'] = userTmp['userName']
+        tmp['avatar'] = userTmp['avatar']
+        response.append(tmp)
+    return response
+
+def get_follow_file_by_id(idUser):
+    query = {'_id': idUser}
+    print(' ---------------- request follow list by id: ', idUser)
+    user = user_col.find_one(query)
+    follows = user['follow']
+    print(follows)
+    response = []
+    for item in follows:
+        fileQuery = {'idUser': item, "state": True, 'isPublic': True}
+        fileCursor = file_col.find(fileQuery)
+        userQuery = {'_id': item}
+        userCursor = user_col.find_one(userQuery)
+        for file in fileCursor:
+            # print(file)
+            tmp = file
+            tmp['userName'] = userCursor['userName']
+            tmp['avatar'] = userCursor['avatar']
+            response.append(tmp)
+        
+    return response
+
+# print(get_follow_file_by_id("1713019909558"))
+# print(get_follow_user_by_id("1713019909558"))
+
 # print(get_user_sub_by_id('1713019909558'))
 
 def get_public_file_by_keyword(keyword, time, searchMode, existFilesId):

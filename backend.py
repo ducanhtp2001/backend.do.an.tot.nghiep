@@ -129,7 +129,7 @@ def get_profile_by_user_id():
         return db.get_profile_by_id_user(idUser)
 
 
-# ///////////////////////////
+
 @app.post('/get-global-file')
 def get_global_file():
     if request.method == 'POST':
@@ -148,6 +148,30 @@ def get_global_file():
         
         print('request file: ', keyword, time, searchMode, existFilesId)
         return db.get_public_file_by_keyword(keyword, time, searchMode, existFilesId)
+
+
+@app.post('/get-follow-user')
+def get_follow_user():
+    if request.method == 'POST':
+        id = None
+        try: 
+            id = request.json['_id']
+        except: return jsonify({"err": "missing arg"}) 
+        
+        print('request follow list from id: ', id)
+        return db.get_follow_user_by_id(id)
+
+# ///////////////////////////
+@app.post('/get-follow-file')
+def get_follow_file():
+    if request.method == 'POST':
+        id = None
+        try: 
+            id = request.json['_id']
+        except: return jsonify({"err": "missing arg"}) 
+        
+        print('request follow list from id: ', id)
+        return db.get_follow_file_by_id(id)
 
 @app.post('/post-comment')
 def post_comment():
