@@ -172,13 +172,24 @@ def get_follow_file():
         
         print('request follow list from id: ', id)
         return db.get_follow_file_by_id(id)
+    
+@app.route('/test', methods=['POST'])
+def test():
+    if request.method == 'POST':
+        msg = request.json.get('msg')
+        if not msg:
+            return jsonify({"err": "missing arg"})
+        print('msg: ', msg)
+        socketio.emit("on_msg_receive", {'msg': msg}, to='1713019963759')
+        return jsonify({'msg': "msg"})
+        # return {'msg': msg}
 
 @app.post('/post-comment')
 def post_comment():
     if request.method == 'POST':
         idUser = ""
         idFile = ""
-        toUserId = ""
+        toUserId = None
         id = ""
         content = ""
         try: 
@@ -208,10 +219,37 @@ def post_comment():
             "likes": [],
         }
 
+        notifyId = f'cmt_{id}'
+        if (toUserId is not None):
+            type = enum_class.notify_type.REPLY
+        else:
+            type = enum_class.notify_type.COMMENT
+
         result = None
 
         try:
             result = db.insert_comment(commentEntity)
+
+            if db.is_collection_exist('notify_col'):
+                print('exist  ======================== idUser: ', idUser, 'idFile: ', idFile, 'idCommentOwner: ', toUserId, 'type: ', type.name)
+                cmt = db.notify_col.find_one({'idUser': idUser, 'idFile': idFile, 'idCommentOwner': toUserId, 'type': type.name}, {'_id':1})
+
+                print("=========================================================", cmt)
+                if cmt is not None:
+                    cmtId =  cmt['_id']
+                    print("delete notify ===================cmtId: ", cmtId)
+                    db.remove_notify(cmtId)
+                else:
+                    notify = db.insert_notify(notifyId, idUser, idFile, toUserId, type)
+                    print("insert notify ===================cmtId: ", cmtId)
+                    print(notify)
+                    socket_send_msg(notify) 
+            else:
+                print(" not exist ==============================================================================")
+                notify = db.insert_notify(notifyId, idUser, idFile, toUserId, type)
+                print("them notify ===================cmtId: ", cmtId)
+                print(notify)
+                socket_send_msg(notify)
         except: pass
 
         if result:
@@ -220,6 +258,45 @@ def post_comment():
         # return jsonify({'message': 'Comment posted successfully'})
         # return jsonify(db.get_file_executed_by_id_user(idUser, True))
 
+def socket_send_msg(notify):
+    idUser = notify['idUser']
+    idFile = notify['idFile']
+    idCommentOwner = notify['idCommentOwner']
+    type = notify['type']
+
+    userName = user_col.find_one({'_id': idUser}, {'userName': 1})['userName']
+    file = file_col.find_one({'_id': idFile}, {'idUser': 1})
+    idSecondUser = file['idUser']
+    secondUserName = user_col.find_one({'_id': idSecondUser}, {'userName': 1})['userName']
+
+    match type:
+        case enum_class.notify_type.NEW_FILE.name:
+            roomName = f'follow_{idUser}'
+            msg = f'{userName} uploaded a file'
+        case enum_class.notify_type.LIKE_FILE.name:
+            roomName = f'follow_{idUser}'
+            if userName == secondUserName:
+                msg = None
+            else:
+                msg = f'{userName} has liked {secondUserName}\'s file'
+        case enum_class.notify_type.COMMENT.name:
+            roomName = f'follow_{idUser}'
+            if userName == secondUserName:
+                msg = None
+            else:
+                msg = f'{userName} comment about {secondUserName}\'s file'
+        case enum_class.notify_type.LIKE_CMT.name:
+            roomName = idCommentOwner
+            msg = f'{userName} liked your comment'
+        case enum_class.notify_type.REPLY.name:
+            roomName = idCommentOwner
+            msg = f'{userName} reply your comment'
+
+    if msg is not None:
+        print(f'msg: {msg}, room name: {roomName}')
+        print(f' ================ tooooooooo id: {notify['_id']}')
+        socketio.emit("on_msg_receive", {'msg': msg, '_id': f'{notify["_id"]}'}, to=roomName)
+    
 
 @app.post('/post-like')
 def post_like():
@@ -234,6 +311,7 @@ def post_like():
         except: pass
     except KeyError:
         return jsonify({'error': 'Missing required argument(s)'})
+        
 
     print('post like: : ', id, idUser, idFile, idComment, type)
 
@@ -251,8 +329,43 @@ def post_like():
         "type": type,
     }
 
+    notifyId = f'cmt_{id}'
+    if (idComment is not None):
+        type = enum_class.notify_type.LIKE_CMT
+    else:
+        type = enum_class.notify_type.LIKE_FILE
+
+    file_comments = db.file_col.find_one({'_id': idFile})['comments']
+    print("================== file cmt:", file_comments)
+    toUserId = ""
+    for item in file_comments:
+        if item['_id'] == idComment:
+            toUserId = item['idUser']
+    print("================== to user id:", toUserId)
+
     try:
         result = db.insert_or_delete_like(evaluationEntity)
+        if db.is_collection_exist('notify_col'):
+            print('exist  ======================== idUser: ', idUser, 'idFile: ', idFile, 'idCommentOwner: ', toUserId, 'type: ', type.name)
+            cmt = db.notify_col.find_one({'idUser': idUser, 'idFile': idFile, 'idCommentOwner': toUserId, 'type': type.name}, {'_id':1})
+
+            print("=========================================================", cmt)
+            if cmt is not None:
+                cmtId =  cmt['_id']
+                print("delete notify ===================cmtId: ", cmtId)
+                db.remove_notify(cmtId)
+            else:
+                notify = db.insert_notify(notifyId, idUser, idFile, toUserId, type)
+                print("insert notify ===================cmtId: ", cmtId)
+                print(notify)
+                socket_send_msg(notify) 
+        else:
+            print(" not exist ==============================================================================")
+            notify = db.insert_notify(notifyId, idUser, idFile, toUserId, type)
+            print("them notify ===================cmtId: ", cmtId)
+            print(notify)
+            socket_send_msg(notify) 
+               
         if result:
             return jsonify(evaluationEntity)
         else:
@@ -349,7 +462,8 @@ def upload_file():
                 "isPublic": isPublic,
                 "isTable": isTable,
                 "likes": [],
-                "comments": []
+                "comments": [],
+                "followers": [],
                 }  
                 # if fileData: file_col.insert_one(fileData)
                 if db.insert_one_to_db(fileData, enum_class.collection.FILE):
@@ -375,7 +489,18 @@ def socket_connect(auth):
 @socketio.on('disconnect')
 def socket_disconnect():
     print("disconnect")
-    # emit("disconnect", {'data': 'disconnect'})
+    # emit("disconnect", {'data': 'disconnect'})@socketio.on('disconnect')
+
+#==============-=-=-=-=-=-=-==-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--==--=
+#==============-=-=-=-=-=-=-==-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--==--=
+# client confirm to server that they receive this msg
+@socketio.on('on_msg_receive')
+def socket_on_msg_receive(data):
+    id = data['id']
+    idUser = data['idUser']
+    print(f"id: {id} is receive notify: {id}")
+    db.remove_user_need_notify(id, idUser)
+
 
 @socketio.on('connect_error')
 def socket_connect_err():
@@ -407,9 +532,10 @@ def start_task():
         isHandling = True
         handler.file_execute_task(onExecuteDone=notify_file_executed_done, onDone=onDoneAll)
 
+
 def notify_file_executed_done(userId, fileTitle):
     print('on Done execute file')
-    emit("on_file_execute_done", {'fileTitle': fileTitle}, to=userId)
+    socketio.emit("on_file_execute_done", {'fileTitle': fileTitle}, to=userId)
 
 def onDoneAll():
     global isHandling

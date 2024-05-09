@@ -9,9 +9,8 @@ myDb = myClient["my_datn_db"]
 
 user_col = myDb['user_col']
 file_col = myDb['file_col']
-cmt_col = myDb['cmt_col']
-# comment_col = myDb['file_col']
-# like_col = myDb['file_col']
+# cmt_col = myDb['cmt_col']
+notify_col = myDb['notify_col']
 
 def insert_one_to_db(data, type):
     if type == enum_class.collection.USER:
@@ -45,6 +44,50 @@ def get_file_to_execute():
     if cursor:
         print(cursor)
         return cursor
+    
+# =====================----------------------------------------===================================
+def remove_user_need_notify(id, idUser):
+    notify = notify_col.find_one({'_id': id})
+    received = notify['received']
+    received.append(idUser)
+    notify_col.update_one({'_id': id}, {"$set": {"received": received}})
+
+# id user is id of user post action(like, cmt, upload)
+# idCommentOwner is id of user post this cmt when it is liked or reply, it can be none
+def insert_notify(id, idUser, idFile, idCommentOwner, type):
+    match type:
+        # notify to all user follow this owner
+        case enum_class.notify_type.NEW_FILE, enum_class.notify_type.LIKE_FILE, enum_class.notify_type.COMMENT:
+            query = {"follow": {"$in": ["1713019909558"]}}
+            projection = {"_id": 1}
+            cursors = user_col.find(query, projection)
+            followers = [cursor['_id'] for cursor in cursors]  
+
+        # notify to all user care this file
+        case _:
+            followers = [idCommentOwner]
+
+    notify = {
+        '_id': id,
+        'idUser': idUser,
+        'idFile': idFile,
+        'idCommentOwner': idCommentOwner, 
+        'type': type.name,  
+        'userReceive': followers,
+        'received': []
+    }
+
+    notify_col.insert_one(notify)
+    print(f'------ insert new notify : {notify}')
+    return notify
+
+
+def remove_notify(id):
+    notify_col.delete_one({'_id': id})
+    print(f'------ delete notify : {id}')
+
+# insert_notify('1', '1713019909558', '1713019963759_1714189585546', enum_class.collection.COMMENT)
+    
     
 def update_file_after_execute(fileId, origin, summary):
     query = {'_id': fileId}
@@ -321,6 +364,12 @@ def insert_or_delete_like(evaluationEntity):
             print(e)
             return False
         
+def is_collection_exist(name):
+    return name in myDb.list_collection_names()
+# print(is_collection_exist('notify_com'))
+
+# cmt = notify_col.find_one({'idUser': '1713019963759', 'idFile': '1713019963759_1714189620474', 'idCommentOwner': '1713019963759', 'type': 'LIKE_CMT'}, {'_id':1})
+# print(cmt)
 
         # evaluation_query = {"_id": evaluationEntity['idFile'],
         #         "comments._id": evaluationEntity['idComment'],
@@ -352,3 +401,61 @@ def insert_or_delete_like(evaluationEntity):
 # get_file_by_id_user("1713019963759")
 
 # get_file_to_execute()
+        
+
+# username = user_col.find_one({'_id': '1713019909558'}, {'userName': 1})['userName']
+# print(username)
+        
+# fileTitle = file_col.find_one({'_id': '1713019963759_1714189585546'}, {'title': 1, 'idUser': 1})
+# print(fileTitle)
+        
+# def socket_send_msg(notify):
+#     idUser = notify['idUser']
+#     idFile = notify['idFile']
+#     idCommentOwner = notify['idCommentOwner']
+#     type = notify['type']
+
+#     userName = user_col.find_one({'_id': idUser}, {'userName': 1})['userName']
+#     file = file_col.find_one({'_id': idFile}, {'idUser': 1})
+#     idSecondUser = file['idUser']
+#     secondUserName = user_col.find_one({'_id': idSecondUser}, {'userName': 1})['userName']
+
+#     match type:
+#         case enum_class.notify_type.NEW_FILE.name:
+#             roomName = f'follow_{idUser}'
+#             msg = f'{userName} uploaded a file'
+#         case enum_class.notify_type.LIKE_FILE.name:
+#             roomName = f'follow_{idUser}'
+#             if userName == secondUserName:
+#                 msg = None
+#             else:
+#                 msg = f'{userName} has liked {secondUserName}\'s file'
+#         case enum_class.notify_type.COMMENT.name:
+#             roomName = f'follow_{idUser}'
+#             if userName == secondUserName:
+#                 msg = None
+#             else:
+#                 msg = f'{userName} comment about {secondUserName}\'s file'
+#         case enum_class.notify_type.LIKE_CMT.name:
+#             roomName = idCommentOwner
+#             msg = f'{userName} liked your comment'
+#         case enum_class.notify_type.REPLY.name:
+#             roomName = idCommentOwner
+#             msg = f'{userName} reply your comment'
+
+#     if msg is not None:
+#         print(f'msg: {msg}, room name: {roomName}')
+
+
+# socket_send_msg(notify = {
+#         '_id': 'id',
+#         'idUser': '1713019963759',
+#         'idFile': '1713019963759_1714189585546',
+#         # 'idCommentOwner': idCommentOwner, 
+#         'idCommentOwner': None, 
+#         'type': enum_class.notify_type.COMMENT.name,  
+#     })
+        
+
+# cmt = notify_col.find_one({'idUser': "1713019963759", 'idFile': "1713019963759_1714189585546", 'idCommentOwner': '1713019963759', 'type': enum_class.notify_type.LIKE_CMT.name}, {'_id':1})['_id']
+# print(cmt)
