@@ -117,7 +117,7 @@ def file_execute_task(onExecuteDone, onDone):
 
             db.update_file_after_execute(file['_id'], cleaned_content, summary_text)
 
-            onExecuteDone(file['idUser'], file['title'])
+            onExecuteDone(file)
 
     
 def execute_test():

@@ -272,15 +272,18 @@ def socket_send_msg(notify):
     match type:
         case enum_class.notify_type.NEW_FILE.name:
             roomName = f'follow_{idUser}'
-            msg = f'{userName} uploaded a file'
+            if idUser == idSecondUser:
+                msg = f'Your file uploaded is available' 
+            else:
+                msg = f'{userName} uploaded a file'
         case enum_class.notify_type.LIKE_FILE.name:
-            roomName = f'follow_{idUser}'
+            roomName = f'file_{idFile}'
             if userName == secondUserName:
                 msg = None
             else:
                 msg = f'{userName} has liked {secondUserName}\'s file'
         case enum_class.notify_type.COMMENT.name:
-            roomName = f'follow_{idUser}'
+            roomName = f'file_{idFile}'
             if userName == secondUserName:
                 msg = None
             else:
@@ -463,8 +466,7 @@ def upload_file():
                 "isTable": isTable,
                 "likes": [],
                 "comments": [],
-                "followers": [],
-                }  
+                "followers": [],}  
                 # if fileData: file_col.insert_one(fileData)
                 if db.insert_one_to_db(fileData, enum_class.collection.FILE):
                     return {'msg': 'File uploaded successfully'}
@@ -491,8 +493,6 @@ def socket_disconnect():
     print("disconnect")
     # emit("disconnect", {'data': 'disconnect'})@socketio.on('disconnect')
 
-#==============-=-=-=-=-=-=-==-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--==--=
-#==============-=-=-=-=-=-=-==-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--==--=
 # client confirm to server that they receive this msg
 @socketio.on('on_msg_receive')
 def socket_on_msg_receive(data):
@@ -506,12 +506,17 @@ def socket_on_msg_receive(data):
 def socket_connect_err():
     emit("disconnect", {'data': 'connect err'})
 
+
+# ==================================================================================================================
 @socketio.on('login')
 def socket_login(data):
     id = data['id']
     join_room(id)
     print(f"data: {data}")
     print(f"id: {id} join to room: {id}")
+
+    db.get_list_id_room(id)
+
     msg = "Login Success"
     emit("on_login_receive", {'msg':msg}, to=id)
 
@@ -533,9 +538,16 @@ def start_task():
         handler.file_execute_task(onExecuteDone=notify_file_executed_done, onDone=onDoneAll)
 
 
-def notify_file_executed_done(userId, fileTitle):
+def notify_file_executed_done(file):
     print('on Done execute file')
-    socketio.emit("on_file_execute_done", {'fileTitle': fileTitle}, to=userId)
+    notifyId = f'file_{file['_id']}'
+    idUser = file['idUser']
+    idFile = file['_id']
+    toUserId = None
+    type = enum_class.notify_type.NEW_FILE.name
+    notify = db.insert_notify(notifyId, idUser, idFile, toUserId, type)
+    socket_send_msg(notify)
+    # socketio.emit("on_file_execute_done", {'fileTitle': fileTitle}, to=userId)
 
 def onDoneAll():
     global isHandling

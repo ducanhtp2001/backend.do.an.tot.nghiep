@@ -282,6 +282,16 @@ def get_file_executed_by_id_user(idUser, isPublic):
     print('find: ', len(files_list))
     return files_list
 
+# =========================================================================================================================
+def get_list_id_room(idUser):
+    idFiles = file_col.find({'followers': {'$elemMatch': {'_id': idUser}}}, {'idUser' : 1})
+    id_list = [doc['idUser'] for doc in idFiles]
+    print(id_list)
+    idFollowers = user_col.find_one({'_id': idUser})
+
+
+get_list_id_room('1713019909558')
+
 def get_user_by_id(idUser):
     query = {'_id': idUser}
     print(' ---------------- id: ', idUser)
