@@ -3,12 +3,13 @@ import os
 from flask import *
 import pymongo
 from pymongo.errors import DuplicateKeyError
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, close_room, emit, join_room, leave_room
 from werkzeug.utils import secure_filename
 import logging
 import redis
 import db_manager as db
 import enum_class
+import time
 
 
 r = redis.Redis(host='localhost', port=6379, decode_responses=True)
@@ -29,6 +30,7 @@ import handler
 
 isHandling = False
 
+room_status = {}
 
 myClient = pymongo.MongoClient("mongodb://localhost:27017/")
 
@@ -259,6 +261,13 @@ def post_comment():
         # return jsonify(db.get_file_executed_by_id_user(idUser, True))
 
 def socket_send_msg(notify):
+    msg, roomName = get_msg_to_notify(notify)
+    if msg is not None:
+        print(f'msg: {msg}, room name: {roomName}')
+        print(f' ================ to id: {notify['_id']}')
+        socketio.emit("on_msg_receive", {'msg': msg, '_id': f'{notify["_id"]}'}, to=roomName)
+
+def get_msg_to_notify(notify):
     idUser = notify['idUser']
     idFile = notify['idFile']
     idCommentOwner = notify['idCommentOwner']
@@ -294,11 +303,7 @@ def socket_send_msg(notify):
         case enum_class.notify_type.REPLY.name:
             roomName = idCommentOwner
             msg = f'{userName} reply your comment'
-
-    if msg is not None:
-        print(f'msg: {msg}, room name: {roomName}')
-        print(f' ================ tooooooooo id: {notify['_id']}')
-        socketio.emit("on_msg_receive", {'msg': msg, '_id': f'{notify["_id"]}'}, to=roomName)
+    return msg, roomName
     
 
 @app.post('/post-like')
@@ -484,6 +489,52 @@ def download_file():
     print(file_path)
     return send_file(file_path, as_attachment=True)
 
+@app.post('/get-notifications')
+def get_notifications():
+    try: 
+        id = request.json['_id']
+    except KeyError:
+        return jsonify({'error': 'Missing required argument(s)'})
+
+    list_notify = []
+    notify_response = []
+    list_notify = db.get_notifications(id)
+    if list_notify is not None and len(list_notify) > 0:
+        for item in list_notify:
+            idOwner = item['idUser']
+            user = db.user_col.find_one({'_id': idOwner})
+            current_millis = int(round(time.time() * 1000))
+            create_millis = item['time']
+            last_time = str(current_millis - create_millis)
+            msg, roomName = get_msg_to_notify(item)
+            if msg is not None:
+                print(
+                    '_id', item['_id'],
+                    'idFile', item['idFile'],
+                    'avatar', user['avatar'],
+                    'content', msg,
+                    'time', last_time
+                )
+                notify = {
+                    '_id': item['_id'],
+                    'idFile': item['idFile'],
+                    'avatar': user['avatar'],
+                    'content': msg,
+                    'time': last_time
+                }
+                print(notify)
+                notify_response.append(notify)
+                return notify_response
+    else: return None
+
+@app.post('/get-single-file')
+def get_single_file():
+    try: 
+        id = request.json['_id']
+    except KeyError:
+        return jsonify({'error': 'Missing required argument(s)'})
+    return db.file_col.find_one({'_id': id})
+
 @socketio.on('connect')
 def socket_connect(auth):
     emit('connect', {'data': 'Connected'})
@@ -512,10 +563,18 @@ def socket_connect_err():
 def socket_login(data):
     id = data['id']
     join_room(id)
-    print(f"data: {data}")
-    print(f"id: {id} join to room: {id}")
+    # print(f"data: {data}")
+    print(f"user: {id} join to room: {id}")
 
-    db.get_list_id_room(id)
+    list_id_file_follower, list_id_follower = db.get_list_id_room(id)
+    for idf in list_id_file_follower:
+        room_name = f'file_{idf}'
+        join_room(room_name)
+        print(f'user {id} join to room: {room_name}')
+    for idf in list_id_follower:
+        room_name = f'follow_{idf}'
+        join_room(room_name)
+        print(f'user {id} join to room: {room_name}')
 
     msg = "Login Success"
     emit("on_login_receive", {'msg':msg}, to=id)
@@ -524,10 +583,50 @@ def socket_login(data):
 def socket_logout(data):
     id = data['id']
     leave_room(id)
-    print(f"data: {data}")
     print(f"id: {id} leave to room: {id}")
+    for idf in list_id_file_follower:
+        room_name = f'file_{idf}'
+        leave_room(room_name)
+        check_and_close_room(room_name)
+        print(f'user {id} join to room: {room_name}')
+
+    for idf in list_id_follower:
+        room_name = f'follow_{idf}'
+        leave_room(room_name)
+        check_and_close_room(room_name)
+        print(f'user {id} join to room: {room_name}')
+    list_id_file_follower, list_id_follower = db.get_list_id_room(id)
     msg = "logout Success"
     emit("on_logout_receive", {'msg':msg}, to=id)
+
+@socketio.on('check_has_notify')
+def check_has_notify(data):
+    id = data['id']
+    print(f'client {id} request check notify')
+    notify_list = db.get_notify_by_id(id)
+    if notify_list is not None:
+        for item in notify_list:
+            try: 
+                msg, room= get_msg_to_notify(item)
+                if msg is not None:
+                    userReceive = item['userReceive']
+                    received = item['received']
+                    print("list not yet notify", userReceive)
+                    print("list had notify", received)
+                    for r in userReceive:
+                        if r not in received: 
+                            print(f"client {id} has notify")
+                            print(f'send notify: {msg} to {id}')
+                            socketio.emit('on_msg_receive', {'msg': msg, '_id': f'{item["_id"]}'}, to=id)
+            except: pass
+
+
+def check_and_close_room(room):
+    room_connections = request.namespace.rooms.get(room)
+    num_members_in_room = len(room_connections) if room_connections else 0
+    if num_members_in_room == 0: 
+        close_room(room)
+        print(f'delete room: {room}')
 
 @socketio.on('start_task')
 def start_task():
@@ -536,7 +635,6 @@ def start_task():
     if (not isHandling):
         isHandling = True
         handler.file_execute_task(onExecuteDone=notify_file_executed_done, onDone=onDoneAll)
-
 
 def notify_file_executed_done(file):
     print('on Done execute file')

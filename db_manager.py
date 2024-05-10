@@ -2,6 +2,7 @@ from flask import jsonify
 import pymongo
 from pymongo.errors import DuplicateKeyError
 import enum_class
+import time
 
 myClient = pymongo.MongoClient("mongodb://localhost:27017/")
 
@@ -66,6 +67,8 @@ def insert_notify(id, idUser, idFile, idCommentOwner, type):
         # notify to all user care this file
         case _:
             followers = [idCommentOwner]
+           
+    current_millis = int(round(time.time() * 1000))
 
     notify = {
         '_id': id,
@@ -73,6 +76,7 @@ def insert_notify(id, idUser, idFile, idCommentOwner, type):
         'idFile': idFile,
         'idCommentOwner': idCommentOwner, 
         'type': type.name,  
+        'time': current_millis,
         'userReceive': followers,
         'received': []
     }
@@ -82,13 +86,22 @@ def insert_notify(id, idUser, idFile, idCommentOwner, type):
     return notify
 
 
+# insert_notify('1', '1713019909558', '1713019963759_1714189585546', enum_class.collection.COMMENT)
+
+
 def remove_notify(id):
     notify_col.delete_one({'_id': id})
     print(f'------ delete notify : {id}')
 
-# insert_notify('1', '1713019909558', '1713019963759_1714189585546', enum_class.collection.COMMENT)
+def get_notifications(idUser):
+    cursor = notify_col.find({'userReceive' : {'$in': [idUser]}})
+    if cursor is not None:
+        list_notify = [notify for notify in cursor]
+        return list_notify
+    return None
     
-    
+# print(get_notifications('1713019963759'))
+
 def update_file_after_execute(fileId, origin, summary):
     query = {'_id': fileId}
     new_data = {'$set': {'recognizeText': origin, 'summaryText': summary, 'state': True}}
@@ -284,13 +297,35 @@ def get_file_executed_by_id_user(idUser, isPublic):
 
 # =========================================================================================================================
 def get_list_id_room(idUser):
-    idFiles = file_col.find({'followers': {'$elemMatch': {'_id': idUser}}}, {'idUser' : 1})
-    id_list = [doc['idUser'] for doc in idFiles]
-    print(id_list)
-    idFollowers = user_col.find_one({'_id': idUser})
+    setFileId = {}
+    setFollowerId = {}
+    try:
+        idFiles = file_col.find({'followers': {'$elemMatch': {'_id': idUser}}}, {'idUser' : 1})
+        id_list = [doc['idUser'] for doc in idFiles]
+        if id_list is not None: setFileId = set(id_list)
+    except: pass
 
+    try:
+        user = user_col.find_one({'_id': idUser})
+        if user is not None: idFollowers = user['follow']
+        if idFollowers is not None and id_list is not None: setFollowerId = set(idFollowers)
+    except: pass
 
-get_list_id_room('1713019909558')
+    return list(setFileId), list(setFollowerId)
+
+def get_notify_by_id(idUser):
+    try: 
+        cursor  = notify_col.find({'userReceive': {'$elemMatch': {'$in': [idUser]}}})
+        if cursor is not None:
+            notify_list = [notify for notify in cursor]
+            return notify_list
+    except: return None
+
+# print(get_notify_by_id('1713019963759'))        
+
+# a, b = get_list_id_room('1713019963759')
+# print(a)
+# print(b)
 
 def get_user_by_id(idUser):
     query = {'_id': idUser}
