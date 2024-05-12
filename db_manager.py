@@ -272,6 +272,7 @@ def get_profile_by_id_user(id):
 
 def delete_file_by_id(fileId):  
     result = file_col.delete_one({"_id": fileId})
+    result = notify_col.delete_many({"idFile": fileId})
     print('============= delete file id:', fileId)
     if result.deleted_count == 1:
         return True
@@ -279,7 +280,11 @@ def delete_file_by_id(fileId):
         return False
     
 def change_state(fileId):  
-    result = file_col.find_one_and_update({"_id": fileId}, {"$set": {"isPublic": {"$not": "$isPublic"}}})
+    # result = file_col.find_one_and_update({"_id": fileId}, {"$set": {"isPublic": {"$not": "$isPublic"}}})
+    # result = file_col.find_one_and_update({"_id": fileId}, {"$set": {"isPublic": {"$not": {"$eq": "$isPublic"}}}})
+    result = file_col.find_one_and_update(
+    {"_id": fileId},
+    {"$set": {"isPublic": True if file_col.find_one({"_id": fileId})["isPublic"] == False else False}})
     print('============= change state file id:', fileId)
     if result is not None:
         return True
