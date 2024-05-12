@@ -319,12 +319,9 @@ def post_like():
         except: pass
     except KeyError:
         return jsonify({'error': 'Missing required argument(s)'})
-        
-
+    
     print('post like: : ', id, idUser, idFile, idComment, type)
-
     user = db.get_user_by_id(idUser)
-
     print("============== user post like: ", user)
 
     evaluationEntity = {
@@ -355,22 +352,22 @@ def post_like():
         result = db.insert_or_delete_like(evaluationEntity)
         if db.is_collection_exist('notify_col'):
             print('exist  ======================== idUser: ', idUser, 'idFile: ', idFile, 'idCommentOwner: ', toUserId, 'type: ', type.name)
-            cmt = db.notify_col.find_one({'idUser': idUser, 'idFile': idFile, 'idCommentOwner': toUserId, 'type': type.name}, {'_id':1})
+            notify = db.notify_col.find_one({'idUser': idUser, 'idFile': idFile, 'idCommentOwner': toUserId, 'type': type.name}, {'_id':1})
 
-            print("=========================================================", cmt)
-            if cmt is not None:
-                cmtId =  cmt['_id']
-                print("delete notify ===================cmtId: ", cmtId)
-                db.remove_notify(cmtId)
+            print("=========================================================", notify)
+            if notify is not None:
+                notifyId =  notify['_id']
+                print("delete notify ===================notifyId: ", notifyId)
+                db.remove_notify(notifyId)
             else:
                 notify = db.insert_notify(notifyId, idUser, idFile, toUserId, type)
-                print("insert notify ===================cmtId: ", cmtId)
+                print("insert notify ===================notifyId: ", notifyId)
                 print(notify)
                 socket_send_msg(notify) 
         else:
             print(" not exist ==============================================================================")
             notify = db.insert_notify(notifyId, idUser, idFile, toUserId, type)
-            print("them notify ===================cmtId: ", cmtId)
+            print("them notify ===================notifyId: ", notifyId)
             print(notify)
             socket_send_msg(notify) 
                
@@ -459,6 +456,8 @@ def upload_file():
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 print("fileName save: ", filename)
 
+                userEntity = {'_id': idUser}
+
                 fileData = {
                 "_id": fileId,
                 "idUser": idUser,
@@ -471,7 +470,7 @@ def upload_file():
                 "isTable": isTable,
                 "likes": [],
                 "comments": [],
-                "followers": [],}  
+                "followers": [userEntity],}  
                 # if fileData: file_col.insert_one(fileData)
                 if db.insert_one_to_db(fileData, enum_class.collection.FILE):
                     return {'msg': 'File uploaded successfully'}
@@ -642,7 +641,7 @@ def notify_file_executed_done(file):
     idUser = file['idUser']
     idFile = file['_id']
     toUserId = None
-    type = enum_class.notify_type.NEW_FILE.name
+    type = enum_class.notify_type.NEW_FILE
     notify = db.insert_notify(notifyId, idUser, idFile, toUserId, type)
     socket_send_msg(notify)
     # socketio.emit("on_file_execute_done", {'fileTitle': fileTitle}, to=userId)

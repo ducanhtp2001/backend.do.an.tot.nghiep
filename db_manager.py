@@ -354,7 +354,7 @@ def insert_or_delete_like(evaluationEntity):
     # query = {"_id": evaluationEntity['idFile']}
 
     if evaluationEntity['type'] == 'FILE':
-        evaluation_query = {"likes": {"$elemMatch": {"idUser": evaluationEntity['idUser']}}} 
+        evaluation_query = {'_id': evaluationEntity['idFile'], "likes": {"$elemMatch": {"idUser": evaluationEntity['idUser']}}} 
 
         try:
             existing_evaluation = file_col.find_one(evaluation_query)
@@ -408,7 +408,15 @@ def insert_or_delete_like(evaluationEntity):
         except Exception as e:
             print(e)
             return False
-        
+
+# eval = {'_id': '1715525712319_1713019963759', 'idUser': '1713019963759', 'avatar': '/get_avatar/default_avatar.png', 'userName': 'a', 'idFile': '1715524865759_1713019963759', 'idComment': None, 'type': 'FILE'}
+
+# print(insert_or_delete_like(eval))
+# evaluation_query = {'_id': evaluationEntity['idFile'], "likes": {"$elemMatch": {"idUser": evaluationEntity['idUser']}}}
+# evaluation_query = {"likes": {"$elemMatch": {"idUser": ['1713019963759']}}} 
+# existing_evaluation = file_col.find_one(evaluation_query)
+# print(existing_evaluation)
+
 def is_collection_exist(name):
     return name in myDb.list_collection_names()
 # print(is_collection_exist('notify_com'))
@@ -504,3 +512,6 @@ def is_collection_exist(name):
 
 # cmt = notify_col.find_one({'idUser': "1713019963759", 'idFile': "1713019963759_1714189585546", 'idCommentOwner': '1713019963759', 'type': enum_class.notify_type.LIKE_CMT.name}, {'_id':1})['_id']
 # print(cmt)
+
+# notify = notify_col.find_one({'idUser': '1', 'idFile': '1713019963759_1715523648366', 'idCommentOwner': None, 'type': 'NEW_FILE'}, {'_id':1})
+# print(notify)
