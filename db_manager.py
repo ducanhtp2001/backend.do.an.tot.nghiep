@@ -68,7 +68,7 @@ def get_user_by_name(userName):
             arr.append(response)
     return arr
 
-print(get_user_by_name('duc'))
+# print(get_user_by_name('duc'))
 # =====================----------------------------------------===================================
 
 def remove_user_need_notify(id, idUser):
