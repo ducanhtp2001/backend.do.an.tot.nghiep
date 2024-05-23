@@ -1,7 +1,6 @@
 from tkinter import Image
 from flask import app
 from pdf2image import convert_from_path
-# from PIL import Image
 import numpy as np
 import cv2
 from transformers import T5ForConditionalGeneration, T5Tokenizer
@@ -13,28 +12,12 @@ import db_manager as db
 import time
 
 celery = Celery(__name__, broker='redis://localhost:6379/0', backend='redis://localhost:6379/0')
-
 BASE_FOLDER = 'D:/com.backend.do.an.tot.nghiep/'
 
 model = None
 tokenizer = None
 
 totalTime = 0
-  
-# def make_celery(app):
-#     celery = Celery(
-#         app.import_name,
-#         backend=app.config['CELERY_RESULT_BACKEND'],
-#         broker=app.config['CELERY_BROKER_URL']
-#     )
-#     celery.conf.update(app.config)
-#     return celery
-
-# app.config.update(
-#     CELERY_BROKER_URL='redis://localhost:6379/0',
-#     CELERY_RESULT_BACKEND='redis://localhost:6379/0'
-# )
-# celery = make_celery(app)
 
 device = torch.device("cpu")
 
@@ -82,6 +65,7 @@ def file_execute_task(onExecuteDone, onDone):
 
 
             print('convert to img')
+
             for i, image in enumerate(images):
                 img_array = np.array(image)
 
@@ -92,7 +76,6 @@ def file_execute_task(onExecuteDone, onDone):
                 text = ""
                 text = pytesseract.image_to_string(gray_img,lang='vie')
                 with open("result/origin_text.txt", "a", encoding="utf-8") as f:
-                    # Ghi nội dung văn bản vào cuối tệp tin
                     f.write(text)
 
             with open("result/origin_text.txt", "r", encoding="utf-8") as f:
@@ -116,7 +99,6 @@ def file_execute_task(onExecuteDone, onDone):
                 summary_text = f.read()
 
             db.update_file_after_execute(file['_id'], cleaned_content, summary_text)
-
             onExecuteDone(file)
 
     
@@ -210,10 +192,8 @@ def summary_fun(segment, model, tokenizer):
     
 
 def split_text_by_word_count(text, max_words=305):
-    # print('bat dau phan doan')
     words = text.split()
     size = len(words)
-
     cur_segment = []
     segments = []
     cur_index = 0
@@ -225,7 +205,6 @@ def split_text_by_word_count(text, max_words=305):
               segments.append(" ".join(cur_segment))
               break
          
-        #  print('cur: ' , cur_index , " nex: " , next_index)
          cur_segment = words[cur_index:next_index]
          cur_index = next_index
          segments.append(" ".join(cur_segment))    

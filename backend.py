@@ -130,7 +130,17 @@ def get_profile_by_user_id():
         print("---------------------ket qua", db.get_profile_by_id_user(idUser))
         return db.get_profile_by_id_user(idUser)
 
-
+@app.post('/get-user-by-name')
+def get_user_by_name():
+    if request.method == 'POST':
+        userName = ""
+        try: 
+            userName = request.json['userName']
+        except: return jsonify({"err": "missing arg"}) 
+        
+        print('idUser to get profile: ', userName)
+        print("---------------------ket qua", db.get_user_by_name(userName))
+        return db.get_user_by_name(userName)
 
 @app.post('/get-global-file')
 def get_global_file():
@@ -665,7 +675,7 @@ def get_avatar(filename):
         return jsonify({"error": str(e)})
 
 def start():
-    socketio.run(app, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True, debug=True, use_reloader=True)
     
 if __name__ == '__main__':
     start()
