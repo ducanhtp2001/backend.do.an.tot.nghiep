@@ -5,7 +5,7 @@ import enum_class
 import time
 import re
 
-myClient = pymongo.MongoClient("mongodb://localhost:27017/")
+myClient = pymongo.MongoClient("mongodb://127.0.0.1:27017")
 
 myDb = myClient["my_datn_db"]
 

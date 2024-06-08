@@ -10,9 +10,10 @@ import redis
 import db_manager as db
 import enum_class
 import time
+from celery import Celery
 
 
-r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+# r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 UPLOAD_FOLDER = 'D:/com.backend.do.an.tot.nghiep/file_folder'
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
@@ -20,10 +21,18 @@ ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'DUCANH_DATN'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config.update(
-    CELERY_BROKER_URL='redis://localhost:6379/0',
-    CELERY_RESULT_BACKEND='redis://localhost:6379/0'
-)
+# app.config.update(
+#     CELERY_BROKER_URL='redis://localhost:6379/0',
+#     CELERY_RESULT_BACKEND='redis://localhost:6379/0'
+# )
+celery = Celery('backend', 
+                broker='redis://127.0.0.1', 
+                backend='redis://127.0.0.1', 
+                broker_connection_retry_on_startup = True)
+
+celery.conf.update(app.config)
+# celery = Celery(__name__, broker=app.config['CELERY_BROKER_URL'], backend=app.config['CELERY_RESULT_BACKEND'])
+
 socketio = SocketIO(app)
 
 import handler
@@ -32,7 +41,7 @@ isHandling = False
 
 room_status = {}
 
-myClient = pymongo.MongoClient("mongodb://localhost:27017/")
+myClient = pymongo.MongoClient("mongodb://127.0.0.1:27017")
 
 myDb = myClient["my_datn_db"]
 
@@ -91,9 +100,9 @@ def login():
         if user:
             session['name'] = user['_id']
             print("session: " + session['name'])
-            return user
+            return jsonify(user)
         else:
-            return None
+            return jsonify({})
 
 @app.post('/get-private-file')
 def get_private_file_by_user_id():
@@ -640,10 +649,15 @@ def check_and_close_room(room):
 @socketio.on('start_task')
 def start_task():
     global isHandling
-    print('on task')
     if (not isHandling):
         isHandling = True
-        handler.file_execute_task(onExecuteDone=notify_file_executed_done, onDone=onDoneAll)
+        my_task.delay()
+        # thay thế xem chạy được không?
+        # handler.file_execute_task.delay(onExecuteDone=notify_file_executed_done, onDone=onDoneAll)
+
+@celery.task        
+def my_task():
+    handler.file_execute_task()
 
 def notify_file_executed_done(file):
     print('on Done execute file')

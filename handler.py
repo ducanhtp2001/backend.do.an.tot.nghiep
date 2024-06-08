@@ -7,11 +7,12 @@ from transformers import T5ForConditionalGeneration, T5Tokenizer
 import torch
 import pytesseract
 import os
-from celery import Celery
 import db_manager as db
 import time
+import re
+from backend import *
 
-celery = Celery(__name__, broker='redis://localhost:6379/0', backend='redis://localhost:6379/0')
+
 BASE_FOLDER = 'D:/com.backend.do.an.tot.nghiep/'
 
 model = None
@@ -21,14 +22,15 @@ totalTime = 0
 
 device = torch.device("cpu")
 
-
-@celery.task
-def file_execute_task(onExecuteDone, onDone):
+# def file_execute_task(onExecuteDone, onDone):
+# @celery.task
+def file_execute_task():
+    print('on task')
     while True:
         file = db.get_file_to_execute()
 
         if not file: 
-            onDone()
+            onDoneAll()
             break
         else:
             print('start execute')
@@ -77,6 +79,8 @@ def file_execute_task(onExecuteDone, onDone):
                 text = pytesseract.image_to_string(gray_img,lang='vie')
                 with open("result/origin_text.txt", "a", encoding="utf-8") as f:
                     f.write(text)
+                with open("result/recognize_text.txt", "a", encoding="utf-8") as f:
+                    f.write(text)
 
             with open("result/origin_text.txt", "r", encoding="utf-8") as f:
                 file_content = f.read()
@@ -97,11 +101,14 @@ def file_execute_task(onExecuteDone, onDone):
             
             with open("result/summary_text.txt", "r", encoding="utf-8") as f:
                 summary_text = f.read()
+            recognize_text = ""
+            with open("result/recognize_text.txt", "r", encoding="utf-8") as f:
+                recognize_text = f.read()
+            recognize_text = trimStr(recognize_text)
 
-            db.update_file_after_execute(file['_id'], cleaned_content, summary_text)
-            onExecuteDone(file)
+            db.update_file_after_execute(file['_id'], recognize_text, summary_text)
+            notify_file_executed_done(file)
 
-    
 def execute_test():
     file = db.get_file_to_execute()
 
@@ -168,7 +175,6 @@ def execute_test():
             summary_fun(segment, model, tokenizer)
 
 
-
 def summary_fun(segment, model, tokenizer):
     global totalTime
     print('tom tat', segment)
@@ -212,5 +218,12 @@ def split_text_by_word_count(text, max_words=305):
     return segments
 
 
+def trimStr(str):
+    str = re.sub(r'\s+', ' ', str)
+    str = re.sub(r'[\r\n]+', '\n', str)
+    return str.strip()
+
+
+file_execute_task()
 
 # execute_test()
