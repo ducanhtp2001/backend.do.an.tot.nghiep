@@ -25,11 +25,20 @@ def insert_one_to_db(data, type):
     # elif type == enum_class.collection.LIKE:
     #     return like_col.insert_one(data).acknowledged
 
+def update_image(idUser):
+    name = f'/get_avatar/{idUser}.png'
+    update_field = 'avatar'
+    print(name)
+    return user_col.update_one({'_id': idUser}, {'$set': {update_field: name}}).acknowledged
 
+def follow_user(idUser, idAnother):
+    name = f'/get_avatar/{idUser}.png'
+    update_field = 'avatar'
+    print(name)
+    return user_col.update_one({'_id': idUser}, {'$set': {update_field: name}}).acknowledged
+        
 def find_one_from_db(id, type):
-
     query = query = {'_id': id}
-
     if type == enum_class.collection.USER:
         data = user_col.find_one(query)
     elif type == enum_class.collection.FILE:
@@ -85,10 +94,11 @@ def insert_notify(id, idUser, idFile, idCommentOwner, type):
     match type:
         # notify to all user follow this owner
         case enum_class.notify_type.NEW_FILE, enum_class.notify_type.LIKE_FILE, enum_class.notify_type.COMMENT:
-            query = {"follow": {"$in": ["1713019909558"]}}
+            query = {"follow": {"$in": [idUser]}}
             projection = {"_id": 1}
             cursors = user_col.find(query, projection)
-            followers = [cursor['_id'] for cursor in cursors]
+            followers = [idUser]
+            followers.extend([cursor['_id'] for cursor in cursors])
 
         # notify to all user care this file
         case _:

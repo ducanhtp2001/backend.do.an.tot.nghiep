@@ -11,34 +11,30 @@ import db_manager as db
 import enum_class
 import time
 from celery import Celery
-
-
 # r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 UPLOAD_FOLDER = 'D:/com.backend.do.an.tot.nghiep/file_folder'
+UPLOAD_AVATAR = 'D:/com.backend.do.an.tot.nghiep/avatar'
+UPLOAD_BANNER = 'D:/com.backend.do.an.tot.nghiep/banner'
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'DUCANH_DATN'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# app.config.update(
-#     CELERY_BROKER_URL='redis://localhost:6379/0',
-#     CELERY_RESULT_BACKEND='redis://localhost:6379/0'
-# )
+app.config['UPLOAD_AVATAR'] = UPLOAD_AVATAR
+app.config['UPLOAD_BANNER'] = UPLOAD_BANNER
+
 celery = Celery('backend', 
                 broker='redis://127.0.0.1', 
                 backend='redis://127.0.0.1', 
                 broker_connection_retry_on_startup = True)
 
 celery.conf.update(app.config)
-# celery = Celery(__name__, broker=app.config['CELERY_BROKER_URL'], backend=app.config['CELERY_RESULT_BACKEND'])
 
 socketio = SocketIO(app)
 
 import handler
-
 isHandling = False
-
 room_status = {}
 
 myClient = pymongo.MongoClient("mongodb://127.0.0.1:27017")
@@ -60,7 +56,6 @@ def register():
             userName = request.json['userName']
             passWord = request.json['passWord']
         except: return "missing arg"
-
         account = {
                 "_id": _id,
                 "userName": userName,
@@ -69,7 +64,6 @@ def register():
                 "follow": [],
                 "avatar": "/get_avatar/default_avatar.png"
                 }    
-
         try:
             if account: user_col.insert_one(account)
         except DuplicateKeyError as d: 
@@ -78,7 +72,6 @@ def register():
                     # video_collection.update_one(query, update)
                     pass
         except Exception as e: logging.error(f'Error occurred: {e}')
-
         print(user_col.find_one({'_id': _id}))
         return user_col.find_one({'_id': _id})
 
@@ -91,12 +84,9 @@ def login():
             userName = request.json['userName']
             passWord = request.json['passWord']
         except: return "missing arg"
-
         print(userName + "-" + passWord)
-
         user = user_col.find_one({'userName': userName, 'passWord': passWord})
         print(user)
-
         if user:
             session['name'] = user['_id']
             print("session: " + session['name'])
@@ -122,9 +112,7 @@ def get_public_file_by_user_id():
         try: 
             idUser = request.json['_id']
         except: return "missing arg" 
-
         print('idUser to get public file: ', idUser)
-
         return jsonify(db.get_file_executed_by_id_user(idUser, True))
 
 @app.post('/get-profile')
@@ -170,7 +158,6 @@ def get_global_file():
         print('request file: ', keyword, time, searchMode, existFilesId)
         return db.get_public_file_by_keyword(keyword, time, searchMode, existFilesId)
 
-
 @app.post('/get-follow-user')
 def get_follow_user():
     if request.method == 'POST':
@@ -182,7 +169,6 @@ def get_follow_user():
         print('request follow list from id: ', id)
         return db.get_follow_user_by_id(id)
 
-# ///////////////////////////
 @app.post('/get-follow-file')
 def get_follow_file():
     if request.method == 'POST':
@@ -276,8 +262,6 @@ def post_comment():
         if result:
             return commentEntity
         else: return None
-        # return jsonify({'message': 'Comment posted successfully'})
-        # return jsonify(db.get_file_executed_by_id_user(idUser, True))
 
 def socket_send_msg(notify):
     msg, roomName = get_msg_to_notify(notify)
@@ -323,7 +307,6 @@ def get_msg_to_notify(notify):
             roomName = idCommentOwner
             msg = f'{userName} reply your comment'
     return msg, roomName
-    
 
 @app.post('/post-like')
 def post_like():
@@ -496,6 +479,39 @@ def upload_file():
             except: {'msg': 'File uploaded false'}
     return {'msg': 'File uploaded false'}
 
+@app.route('/upload-image', methods=['GET', 'POST'])
+def upload_image():
+    if request.method == 'POST':
+
+        if 'file' not in request.files:
+            print('No file part')
+            return {'msg': 'No file part'}
+        file = request.files['file']
+        fileName = request.form.get('fileName')
+        fileType = request.form.get('fileType')
+        idUser = fileName
+        fileName = f'{fileName}.png'
+        print("user id: ", idUser)
+        print("fileType: ", fileType)
+
+        if file.filename == '':
+            return {'msg': 'No selected file'}
+        if file:
+            try:
+                type = 'UPLOAD_AVATAR'
+                if fileType == 'BANNER':
+                    type = 'UPLOAD_BANNER'
+                filename = secure_filename(fileName)
+                file.save(os.path.join(app.config[type], filename))
+                print("fileName save: ", filename)
+                if fileType == 'AVATAR':
+                    print('start update avatar')
+                    if db.update_image(idUser):
+                        print("success upload img")
+                return {'msg': 'Uploaded successfully'}
+            except: {'msg': 'Uploaded false'}
+    return {'msg': 'Uploaded false'}
+
 @app.post('/download')
 def download_file():
     try: 
@@ -506,6 +522,27 @@ def download_file():
     file_path = os.path.join(UPLOAD_FOLDER, f"{id}.pdf")
     print(file_path)
     return send_file(file_path, as_attachment=True)
+
+@app.post('/follow-user')
+def follow_user():
+    try: 
+        userId = request.json['userId']
+        anotherId = request.json['anotherId']
+    except KeyError:
+        return jsonify({'error': 'Missing required argument(s)'})
+    print(f'user: {userId} follow {anotherId}')
+
+    query = {"_id": userId}
+    result = user_col.update_one(
+            query,
+            {"$addToSet": {"follow": anotherId}},
+            upsert=True
+        )
+    
+    if result.modified_count > 0:
+        return jsonify({'msg': 'Success'})
+    else:
+        return jsonify({'msg': 'False'})
 
 @app.post('/get-notifications')
 def get_notifications():
@@ -570,11 +607,9 @@ def socket_on_msg_receive(data):
     print(f"id: {id} is receive notify: {id}")
     db.remove_user_need_notify(id, idUser)
 
-
 @socketio.on('connect_error')
 def socket_connect_err():
     emit("disconnect", {'data': 'connect err'})
-
 
 # ==================================================================================================================
 @socketio.on('login')
@@ -639,7 +674,6 @@ def check_has_notify(data):
                             socketio.emit('on_msg_receive', {'msg': msg, '_id': f'{item["_id"]}'}, to=id)
             except: pass
 
-
 def check_and_close_room(room):
     room_connections = request.namespace.rooms.get(room)
     num_members_in_room = len(room_connections) if room_connections else 0
@@ -685,10 +719,17 @@ def page_not_found(e):
 def get_avatar(filename):
     directory = 'D:/com.backend.do.an.tot.nghiep/avatar'
     try:
-        print(send_from_directory(directory, filename))
         return send_from_directory(directory, filename)
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return send_from_directory(directory, 'default_avatar.png')
+    
+@app.route('/get_banner/<filename>', methods=['GET'])
+def get_banner(filename):
+    directory = 'D:/com.backend.do.an.tot.nghiep/banner'
+    try:
+        return send_from_directory(directory, filename)
+    except Exception as e:
+        return send_from_directory(directory, 'img_banner.jpg')
 
 def start():
     socketio.run(app, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True, debug=True, use_reloader=True)
