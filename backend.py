@@ -601,6 +601,7 @@ def socket_login(data):
 def socket_logout(data):
     id = data['id']
     leave_room(id)
+    list_id_file_follower, list_id_follower = db.get_list_id_room(id)
     print(f"id: {id} leave to room: {id}")
     for idf in list_id_file_follower:
         room_name = f'file_{idf}'
@@ -613,7 +614,7 @@ def socket_logout(data):
         leave_room(room_name)
         check_and_close_room(room_name)
         print(f'user {id} join to room: {room_name}')
-    list_id_file_follower, list_id_follower = db.get_list_id_room(id)
+    
     msg = "logout Success"
     emit("on_logout_receive", {'msg':msg}, to=id)
 
@@ -651,13 +652,14 @@ def start_task():
     global isHandling
     if (not isHandling):
         isHandling = True
+        print('on start task in backend')
         my_task.delay()
         # thay thế xem chạy được không?
         # handler.file_execute_task.delay(onExecuteDone=notify_file_executed_done, onDone=onDoneAll)
 
 @celery.task        
 def my_task():
-    handler.file_execute_task()
+    handler.file_execute_task(onDoneAll = onDoneAll, notify_file_executed_done= notify_file_executed_done)
 
 def notify_file_executed_done(file):
     print('on Done execute file')

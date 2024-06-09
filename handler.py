@@ -10,8 +10,6 @@ import os
 import db_manager as db
 import time
 import re
-from backend import *
-
 
 BASE_FOLDER = 'D:/com.backend.do.an.tot.nghiep/'
 
@@ -24,7 +22,7 @@ device = torch.device("cpu")
 
 # def file_execute_task(onExecuteDone, onDone):
 # @celery.task
-def file_execute_task():
+def file_execute_task(onDoneAll, notify_file_executed_done):
     print('on task')
     while True:
         file = db.get_file_to_execute()
@@ -224,6 +222,6 @@ def trimStr(str):
     return str.strip()
 
 
-file_execute_task()
+# file_execute_task()
 
 # execute_test()
