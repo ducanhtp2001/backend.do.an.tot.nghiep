@@ -1,2 +1,3 @@
-mt = notify_col.find_one({'idUser': "1713019963759", 'idFile': "1713019963759_1714189585546", 'idCommentOwner': '1713019963759', 'type': enum_class.notify_type.LIKE_CMT.name}, {'_id':1})['_id']
-print(cmt)
+
+insert_notify('file_171797034', '1717094197034', '1717096266671_1717094197034',
+              None, enum_class.notify_type.NEW_FILE)

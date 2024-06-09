@@ -91,18 +91,21 @@ def remove_user_need_notify(id, idUser):
 
 
 def insert_notify(id, idUser, idFile, idCommentOwner, type):
-    match type:
-        # notify to all user follow this owner
-        case enum_class.notify_type.NEW_FILE, enum_class.notify_type.LIKE_FILE, enum_class.notify_type.COMMENT:
-            query = {"follow": {"$in": [idUser]}}
-            projection = {"_id": 1}
-            cursors = user_col.find(query, projection)
-            followers = [idUser]
-            followers.extend([cursor['_id'] for cursor in cursors])
-
-        # notify to all user care this file
-        case _:
-            followers = [idCommentOwner]
+    print(f'id: {id}')
+    print(f'idUser: {idUser}')
+    print(f'idFile: {idFile}')
+    print(f'idCommentOwner: {idCommentOwner}')
+    print(f'type: {type}')
+    if type == enum_class.notify_type.NEW_FILE or type == enum_class.notify_type.LIKE_FILE or type == enum_class.notify_type.COMMENT:
+        query = {"follow": {"$in": [idUser]}}
+        projection = {"_id": 1}
+        cursors = user_col.find(query, projection)
+        followers = [idUser]
+        followers.extend([cursor['_id'] for cursor in cursors])
+        print(f'fl: {followers}')
+    else:
+        followers = [idCommentOwner]
+        print(f'icmo: {followers}')
 
     current_millis = int(round(time.time() * 1000))
 
@@ -121,8 +124,13 @@ def insert_notify(id, idUser, idFile, idCommentOwner, type):
     print(f'------ insert new notify : {notify}')
     return notify
 
+# insert_notify('file_171797034', '1717094197034', '1717096266671_1717094197034',
+#               None, enum_class.notify_type.NEW_FILE)
+# insert_notify('file_171796_564d0a0b03232143c63b709732257bf41316', '564d0a0b03232143c63b709732257bf41316', 
+#               '1717964279612_564d0a0b03232143c63b709732257bf41316',
+#               None, enum_class.notify_type.NEW_FILE)
 
-# insert_notify('1', '1713019909558', '1713019963759_1714189585546', enum_class.collection.COMMENT)
+# def insert_notify(id, idUser, idFile, idCommentOwner, type):
 
 
 def remove_notify(id):

@@ -11,6 +11,7 @@ import db_manager as db
 import enum_class
 import time
 from celery import Celery
+import helper
 # r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 UPLOAD_FOLDER = 'D:/com.backend.do.an.tot.nghiep/file_folder'
@@ -45,35 +46,67 @@ user_col = myDb['user_col']
 file_col = myDb['file_col']
 cmt_col = myDb['cmt_col']
 
-@app.post('/register')
+
+@app.route('/register', methods=['POST'])
 def register():
     if request.method == 'POST':
-        _id = None
-        userName = ""
-        passWord = ""
-        try: 
-            _id = request.json['_id']
+        try:
+            _id = helper.generate_user_id()
             userName = request.json['userName']
             passWord = request.json['passWord']
-        except: return "missing arg"
+        except:
+            return jsonify({"error": "missing arg"})
+
+        if user_col.find_one({'userName': userName}) is not None:
+            return jsonify({"error": "Username already exists"})
+        while user_col.find_one({'_id': _id}) is not None:
+            _id = helper.generate_user_id()
+
         account = {
-                "_id": _id,
-                "userName": userName,
-                "passWord": passWord,
-                "email": "",
-                "follow": [],
-                "avatar": "/get_avatar/default_avatar.png"
-                }    
+            "_id": _id,
+            "userName": userName,
+            "passWord": passWord,
+            "email": "",
+            "follow": [],
+            "avatar": "/get_avatar/default_avatar.png"
+        }
+
         try:
-            if account: user_col.insert_one(account)
-        except DuplicateKeyError as d: 
-                    # query = {"_id": info['_id']}
-                    # update = {"$set": info}
-                    # video_collection.update_one(query, update)
-                    pass
-        except Exception as e: logging.error(f'Error occurred: {e}')
-        print(user_col.find_one({'_id': _id}))
-        return user_col.find_one({'_id': _id})
+            user_col.insert_one(account)
+        except DuplicateKeyError:
+            return jsonify({"error": "Duplicate key error"})
+        except Exception as e:
+            return jsonify({"error": "An error occurred"})
+
+        user = user_col.find_one({'_id': _id})
+        return jsonify(user)
+
+# @app.post('/register')
+# def register():
+#     if request.method == 'POST':
+#         _id = None
+#         userName = ""
+#         passWord = ""
+#         try: 
+#             _id = helper.generate_user_id()
+#             userName = request.json['userName']
+#             passWord = request.json['passWord']
+#         except: return "missing arg"
+#         account = {
+#                 "_id": _id,
+#                 "userName": userName,
+#                 "passWord": passWord,
+#                 "email": "",
+#                 "follow": [],
+#                 "avatar": "/get_avatar/default_avatar.png"
+#                 }    
+#         try:
+#             if account: user_col.insert_one(account)
+#         except DuplicateKeyError as d: 
+#             pass
+#         except Exception as e: logging.error(f'Error occurred: {e}')
+#         print(user_col.find_one({'_id': _id}))
+#         return user_col.find_one({'_id': _id})
 
 @app.post('/login')
 def login():
