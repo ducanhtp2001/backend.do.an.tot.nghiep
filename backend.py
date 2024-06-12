@@ -130,6 +130,7 @@ def changeEmail():
         result = ultil.send_email(receiver_email, subject, body)
 
         if result:
+            rd.setex(_id, 120, OTP)
             return jsonify({"msg": "OTP has been sent to your email.", "isSuccess": True})
         else: return jsonify({"msg": "An error occurred", "isSuccess": False})
 
