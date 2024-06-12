@@ -33,8 +33,11 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import random
 
-def send_email(sender_email, app_password, receiver_email, subject, body):
+def send_email(receiver_email, subject, body):
+    sender_email = "xyza09346@gmail.com"
+    app_password = "zddn kntr fgcl bhzd"
     try:
         # Thiết lập máy chủ SMTP cho Gmail
         smtp_server = "smtp.gmail.com"
@@ -62,16 +65,20 @@ def send_email(sender_email, app_password, receiver_email, subject, body):
         # Đóng phiên SMTP
         server.quit()
 
-        print("Email đã được gửi thành công!")
+        return True
     except Exception as e:
-        print(f"Đã xảy ra lỗi khi gửi email: {e}")
+        return False
+
+def generate_random_otp():
+    return "{:04}".format(random.randint(0, 9999))
+
+# print(generate_random_otp())
 
 # Thông tin tài khoản Gmail và nội dung email
-sender_email = "xyza09346@gmail.com"
-sender_password = "zddn kntr fgcl bhzd"
-receiver_email = "ducanh123.com@gmail.com"
-subject = "Đây là chủ đề email"
-body = "Đây là nội dung email"
+
+# receiver_email = "ducanh123.com@gmail.com"
+# subject = "Đây là chủ đề email"
+# body = "Đây là nội dung email"
 
 # Gửi email
-send_email(sender_email, sender_password, receiver_email, subject, body)
+# send_email(sender_email, sender_password, receiver_email, subject, body)

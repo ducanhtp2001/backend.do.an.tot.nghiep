@@ -12,7 +12,9 @@ import enum_class
 import time
 from celery import Celery
 import helper
-# r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+import ultil
+
+rd = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 UPLOAD_FOLDER = 'D:/com.backend.do.an.tot.nghiep/file_folder'
 UPLOAD_AVATAR = 'D:/com.backend.do.an.tot.nghiep/avatar'
@@ -81,32 +83,55 @@ def register():
         user = user_col.find_one({'_id': _id})
         return jsonify(user)
 
-# @app.post('/register')
-# def register():
-#     if request.method == 'POST':
-#         _id = None
-#         userName = ""
-#         passWord = ""
-#         try: 
-#             _id = helper.generate_user_id()
-#             userName = request.json['userName']
-#             passWord = request.json['passWord']
-#         except: return "missing arg"
-#         account = {
-#                 "_id": _id,
-#                 "userName": userName,
-#                 "passWord": passWord,
-#                 "email": "",
-#                 "follow": [],
-#                 "avatar": "/get_avatar/default_avatar.png"
-#                 }    
-#         try:
-#             if account: user_col.insert_one(account)
-#         except DuplicateKeyError as d: 
-#             pass
-#         except Exception as e: logging.error(f'Error occurred: {e}')
-#         print(user_col.find_one({'_id': _id}))
-#         return user_col.find_one({'_id': _id})
+@app.post('/post-code')
+def postCode():
+    if request.method == 'POST':
+        idUser = ""
+        code = ""
+        try: 
+            idUser = request.json['idUser']
+            code = request.json['code']
+        except: return jsonify({"error": "Missing args"})
+
+        value = rd.get(idUser)
+
+        if value is not None:
+            value = value.decode('utf-8')
+            if value == code:
+                return jsonify({"msg": "Success", "isSuccess": True})
+            else:
+                return jsonify({"msg": "Incorrect OTP", "isSuccess": False})
+        else:
+            return jsonify({"error": "An error occurred"})
+          
+
+@app.post('/change-gmail')
+def changeEmail():
+    if request.method == 'POST':
+        _id = ""
+        password = ""
+        gmail = ""
+        try: 
+            _id = request.json['_id']
+            password = request.json['password']
+            gmail = request.json['gmail']
+        except: return jsonify({"error": "Missing args"})
+
+        user = db.get_user_by_id(_id)
+        if user is None: return jsonify({"error": "No found this user."})
+        if user['passWord'] != password: return jsonify({"msg": "Password is incorrect.", "isSuccess": False})
+
+        OTP = ultil.generate_random_otp()
+
+        receiver_email = gmail
+        subject = "OPT to change Email"
+        body = f"OTP: {OTP}"
+
+        result = ultil.send_email(receiver_email, subject, body)
+
+        if result:
+            return jsonify({"msg": "OTP has been sent to your email.", "isSuccess": True})
+        else: return jsonify({"msg": "An error occurred", "isSuccess": False})
 
 @app.post('/login')
 def login():
@@ -508,6 +533,7 @@ def upload_file():
                 "followers": [userEntity],}  
                 # if fileData: file_col.insert_one(fileData)
                 if db.insert_one_to_db(fileData, enum_class.collection.FILE):
+                    join_room(idUser)
                     return {'msg': 'File uploaded successfully'}
             except: {'msg': 'File uploaded false'}
     return {'msg': 'File uploaded false'}
