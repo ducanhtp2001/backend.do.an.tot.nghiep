@@ -41,6 +41,8 @@ def file_execute_task(onDoneAll, notify_file_executed_done):
                 file_content = f.write("")
             with open("result/summary_text.txt", "w", encoding="utf-8") as f:
                 file_content = f.write("")
+            with open("result/recognize_text.txt", "w", encoding="utf-8") as f:
+                file_content = f.write("")
 
             file_path = BASE_FOLDER + "modelT5"
 
@@ -99,7 +101,6 @@ def file_execute_task(onDoneAll, notify_file_executed_done):
             
             with open("result/summary_text.txt", "r", encoding="utf-8") as f:
                 summary_text = f.read()
-            recognize_text = ""
             with open("result/recognize_text.txt", "r", encoding="utf-8") as f:
                 recognize_text = f.read()
             recognize_text = trimStr(recognize_text)

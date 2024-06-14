@@ -83,7 +83,7 @@ def register():
         user = user_col.find_one({'_id': _id})
         return jsonify(user)
 
-@app.post('/post-code')
+@app.route('/post-code', methods=['POST'])
 def postCode():
     if request.method == 'POST':
         idUser = ""
@@ -91,13 +91,18 @@ def postCode():
         try: 
             idUser = request.json['idUser']
             code = request.json['code']
-        except: return jsonify({"error": "Missing args"})
+        except:
+            return jsonify({"error": "Missing args"})
 
         value = rd.get(idUser)
 
         if value is not None:
-            value = value.decode('utf-8')
-            if value == code:
+            print(f"value from redis: {value}")
+            OPT, gmail = value.split('-')
+            user = db.get_user_by_id(idUser)
+            user['email'] = gmail
+            if OPT == code:
+                db.update_user(user)
                 return jsonify({"msg": "Success", "isSuccess": True})
             else:
                 return jsonify({"msg": "Incorrect OTP", "isSuccess": False})
@@ -121,6 +126,8 @@ def changeEmail():
         if user is None: return jsonify({"error": "No found this user."})
         if user['passWord'] != password: return jsonify({"msg": "Password is incorrect.", "isSuccess": False})
 
+        user['email'] = gmail
+
         OTP = ultil.generate_random_otp()
 
         receiver_email = gmail
@@ -130,7 +137,8 @@ def changeEmail():
         result = ultil.send_email(receiver_email, subject, body)
 
         if result:
-            rd.setex(_id, 120, OTP)
+            value = f'{OTP}-{gmail}'
+            rd.setex(_id, 120, value)
             return jsonify({"msg": "OTP has been sent to your email.", "isSuccess": True})
         else: return jsonify({"msg": "An error occurred", "isSuccess": False})
 
@@ -365,6 +373,7 @@ def get_msg_to_notify(notify):
         case enum_class.notify_type.REPLY.name:
             roomName = idCommentOwner
             msg = f'{userName} reply your comment'
+            print("msg", msg)
     return msg, roomName
 
 @app.post('/post-like')
@@ -534,7 +543,7 @@ def upload_file():
                 "followers": [userEntity],}  
                 # if fileData: file_col.insert_one(fileData)
                 if db.insert_one_to_db(fileData, enum_class.collection.FILE):
-                    join_room(idUser)
+                    print("upload and join", idUser)
                     return {'msg': 'File uploaded successfully'}
             except: {'msg': 'File uploaded false'}
     return {'msg': 'File uploaded false'}
@@ -615,7 +624,9 @@ def get_notifications():
     notify_response = []
     list_notify = db.get_notifications(id)
     if list_notify is not None and len(list_notify) > 0:
+        # for item1 in list_notify: print(item1)
         for item in list_notify:
+            print(item)
             idOwner = item['idUser']
             user = db.user_col.find_one({'_id': idOwner})
             current_millis = int(round(time.time() * 1000))
@@ -623,13 +634,6 @@ def get_notifications():
             last_time = str(current_millis - create_millis)
             msg, roomName = get_msg_to_notify(item)
             if msg is not None:
-                print(
-                    '_id', item['_id'],
-                    'idFile', item['idFile'],
-                    'avatar', user['avatar'],
-                    'content', msg,
-                    'time', last_time
-                )
                 notify = {
                     '_id': item['_id'],
                     'idFile': item['idFile'],
@@ -637,9 +641,9 @@ def get_notifications():
                     'content': msg,
                     'time': last_time
                 }
-                print(notify)
-                notify_response.append(notify)
-                return notify_response
+                # print("----------------- notify", notify)
+            notify_response.append(notify)
+        return notify_response
     else: return None
 
 @app.post('/get-single-file')

@@ -120,7 +120,10 @@ def insert_notify(id, idUser, idFile, idCommentOwner, type):
         'received': []
     }
 
-    notify_col.insert_one(notify)
+    try:
+        notify_col.insert_one(notify)
+    except:
+        pass
     print(f'------ insert new notify : {notify}')
     return notify
 
@@ -144,6 +147,9 @@ def get_notifications(idUser):
         list_notify = [notify for notify in cursor]
         return list_notify
     return None
+
+# cursor = get_notifications('564d0a0b03232143c63b709732257bf41316')
+# for item in cursor: print(item)
 
 # print(get_notifications('1713019963759'))
 
@@ -401,9 +407,26 @@ def get_notify_by_id(idUser):
 
 
 def get_user_by_id(idUser):
-    query = {'_id': idUser}
-    print(' ---------------- id: ', idUser)
+    query = {"_id": idUser}
     return user_col.find_one(query)
+
+def update_user(user):
+    query = {"_id": user['_id']}  # Tiêu chí tìm kiếm người dùng cần cập nhật
+    updates = {"$set": user}
+    return user_col.update_one(query, updates)
+
+# user = {
+#   "_id": "1716152851466",
+#   "userName": "ducanhtp2001",
+#   "passWord": "12345abc",
+#   "email": "",
+#   "follow": [],
+#   "avatar": "/get_avatar/default_avatar.png"
+# }
+
+# user['passWord'] = "Abc12345"
+# result = update_user(user)
+# print(result)
 
 
 def insert_comment(commentEntity):

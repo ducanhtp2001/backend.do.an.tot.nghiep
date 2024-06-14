@@ -72,6 +72,52 @@ def send_email(receiver_email, subject, body):
 def generate_random_otp():
     return "{:04}".format(random.randint(0, 9999))
 
+
+
+
+
+
+
+
+import db_manager as db
+import redis
+rd = redis.Redis(host='localhost', port=6379, decode_responses=True)
+
+def test():
+        try: 
+            _id = '1716152851466'
+            password = 'Abc12345'
+            gmail = 'ducanhtp2001'
+        except: 
+            print(({"error": "Missing args"}))
+            return
+
+        user = db.get_user_by_id(_id)
+        if user is None: print(({"error": "No found this user."})) 
+        if user['passWord'] != password: 
+            print(({"msg": "Password is incorrect.", "isSuccess": False})) 
+            return
+        
+        OTP = generate_random_otp()
+
+        if True:
+            v = f'{OTP}-{gmail}'
+            rd.setex(_id, 120, v)
+
+            value = rd.get('1716152851466')
+            print(f'value: {value}')
+
+            if value is not None:
+                if not isinstance(value, bytes):
+                    print(f"value from redis: {value}")
+                    OPT, gmail = value.split('-')
+                    user = db.get_user_by_id(_id)
+                    user['email'] = gmail
+                    if OPT:
+                        print('OTP load: ', OTP)
+                        db.update_user(user)
+# test()
+
 # print(generate_random_otp())
 
 # Thông tin tài khoản Gmail và nội dung email
