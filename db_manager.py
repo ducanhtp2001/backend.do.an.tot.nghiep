@@ -88,6 +88,18 @@ def remove_user_need_notify(id, idUser):
 
 # id user is id of user post action(like, cmt, upload)
 # idCommentOwner is id of user post this cmt when it is liked or reply, it can be none
+    
+def updatePass(idUser, newPass):
+    try:
+        query = {'_id': idUser}
+        user = user_col.find_one(query)
+        user['passWord'] = newPass
+        action = {"$set": user}
+        return user_col.update_one(query, action)
+    except:
+        return None
+    
+# print(updatePass('1716152851466', 'Abc123456'))
 
 
 def insert_notify(id, idUser, idFile, idCommentOwner, type):
@@ -408,6 +420,11 @@ def get_notify_by_id(idUser):
 
 def get_user_by_id(idUser):
     query = {"_id": idUser}
+    return user_col.find_one(query)
+
+
+def get_user_by_name(userName):
+    query = {"userName": userName}
     return user_col.find_one(query)
 
 def update_user(user):

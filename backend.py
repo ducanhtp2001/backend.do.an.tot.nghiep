@@ -60,7 +60,7 @@ def register():
             return jsonify({"error": "missing arg"})
 
         if user_col.find_one({'userName': userName}) is not None:
-            return jsonify({"error": "Username already exists"})
+            return jsonify({"msg": "Username already exists", "isSuccess": False})
         while user_col.find_one({'_id': _id}) is not None:
             _id = helper.generate_user_id()
 
@@ -87,28 +87,52 @@ def register():
 def postCode():
     if request.method == 'POST':
         idUser = ""
+        userName = ""
         code = ""
         try: 
-            idUser = request.json['idUser']
-            code = request.json['code']
+            if 'idUser' in request.json:
+                idUser = request.json['idUser']
+            if 'userName' in request.json:
+                userName = request.json['userName']
+            if 'code' in request.json:
+                code = request.json['code']
         except:
             return jsonify({"error": "Missing args"})
+        
+        print(idUser, userName, code)
 
-        value = rd.get(idUser)
+        if idUser != "":
+            value = rd.get(idUser)
+            print(idUser)
 
-        if value is not None:
-            print(f"value from redis: {value}")
-            OPT, gmail = value.split('-')
-            user = db.get_user_by_id(idUser)
-            user['email'] = gmail
-            if OPT == code:
-                db.update_user(user)
-                return jsonify({"msg": "Success", "isSuccess": True})
+            if value is not None:
+                print(f"value from redis: {value}")
+                OPT, gmail = value.split('-')
+                user = db.get_user_by_id(idUser)
+                user['email'] = gmail
+                if OPT == code:
+                    db.update_user(user)
+                    return jsonify({"msg": "Success", "isSuccess": True})
+                else:
+                    return jsonify({"msg": "Incorrect OTP", "isSuccess": False})
             else:
-                return jsonify({"msg": "Incorrect OTP", "isSuccess": False})
-        else:
-            return jsonify({"error": "An error occurred"})
-          
+                return jsonify({"error": "An error occurred"})
+        else: 
+            print(userName)
+            value = rd.get(userName)
+            if value is not None:
+                print(f"value from redis: {value}")
+                OPT, passWord = value.split('-')
+                user = db.get_user_by_name(userName)
+                if user is None: return jsonify({"msg": "No found user", "isSuccess": True})
+                user['passWord'] = passWord
+                if OPT == code:
+                    db.update_user(user)
+                    return jsonify({"msg": "Success", "isSuccess": True})
+                else:
+                    return jsonify({"msg": "Incorrect OTP", "isSuccess": False})
+            else:
+                return jsonify({"error": "An error occurred"})
 
 @app.post('/change-gmail')
 def changeEmail():
@@ -141,6 +165,78 @@ def changeEmail():
             rd.setex(_id, 120, value)
             return jsonify({"msg": "OTP has been sent to your email.", "isSuccess": True})
         else: return jsonify({"msg": "An error occurred", "isSuccess": False})
+          
+@app.post('/change-pass')
+def changePass():
+    if request.method == 'POST':
+        _id = ""
+        passWord = ""
+        try: 
+            _id = request.json['_id']
+            passWord = request.json['passWord']
+        except: return jsonify({"error": "Missing args"})
+
+        result = db.updatePass(_id, passWord)
+
+        if result:
+            return jsonify({"msg": "Success", "isSuccess": True})
+        else: return jsonify({"msg": "False", "isSuccess": False})
+
+@app.route('/verify-code', methods=['POST'])
+def verifyCode():
+    if request.method == 'POST':
+        idUser = ""
+        code = ""
+        try: 
+            idUser = request.json['idUser']
+            code = request.json['code']
+        except:
+            return jsonify({"error": "Missing args"})
+
+        value = rd.get(idUser)
+
+        if value is not None:
+            print(f"value from redis: {value}")
+            OPT, gmail = value.split('-')
+            user = db.get_user_by_id(idUser)
+            user['email'] = gmail
+            if OPT == code:
+                db.update_user(user)
+                return jsonify({"msg": "Success", "isSuccess": True})
+            else:
+                return jsonify({"msg": "Incorrect OTP", "isSuccess": False})
+        else:
+            return jsonify({"error": "An error occurred"})
+
+@app.post('/forget-pass')
+def forgetPass():
+    if request.method == 'POST':
+        userName = ""
+        passWord = ""
+        try: 
+            userName = request.json['userName']
+            passWord = request.json['passWord']
+        except: return jsonify({"error": "Missing args"})
+
+        user = db.get_user_by_name(userName)
+        if user is None: return jsonify({"error": "No found this user."})
+
+        gmail = user['email']
+
+        OTP = ultil.generate_random_otp()
+
+        receiver_email = gmail
+        subject = "OPT to change Email"
+        body = f"OTP: {OTP}"
+
+        result = ultil.send_email(receiver_email, subject, body)
+
+        if result:
+            value = f'{OTP}-{passWord}'
+            rd.setex(userName, 120, value)
+            return jsonify({"msg": "OTP has been sent to your email.", "isSuccess": True})
+        else: return jsonify({"msg": "An error occurred", "isSuccess": False})
+
 
 @app.post('/login')
 def login():
