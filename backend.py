@@ -869,6 +869,7 @@ def notify_file_executed_done(file):
 def onDoneAll():
     global isHandling
     isHandling = False
+    print(f"Task Done All, isHandling = {isHandling}")
 
 @app.errorhandler(500)
 def page_not_found(e):
