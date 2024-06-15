@@ -16,6 +16,8 @@ import ultil
 
 rd = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
+isHandling = rd.set("isHandling", "False")
+
 UPLOAD_FOLDER = 'D:/com.backend.do.an.tot.nghiep/file_folder'
 UPLOAD_AVATAR = 'D:/com.backend.do.an.tot.nghiep/avatar'
 UPLOAD_BANNER = 'D:/com.backend.do.an.tot.nghiep/banner'
@@ -37,7 +39,6 @@ celery.conf.update(app.config)
 socketio = SocketIO(app)
 
 import handler
-isHandling = False
 room_status = {}
 
 myClient = pymongo.MongoClient("mongodb://127.0.0.1:27017")
@@ -451,6 +452,7 @@ def get_msg_to_notify(notify):
                 msg = f'Your file uploaded is available' 
             else:
                 msg = f'{userName} uploaded a file'
+            socketio.emit("on_msg_receive", {'msg': msg, '_id': f'{notify["_id"]}'}, to=idUser)
         case enum_class.notify_type.LIKE_FILE.name:
             roomName = f'file_{idFile}'
             if userName == secondUserName:
@@ -458,7 +460,7 @@ def get_msg_to_notify(notify):
             else:
                 msg = f'{userName} has liked {secondUserName}\'s file'
         case enum_class.notify_type.COMMENT.name:
-            roomName = f'file_{idFile}'
+            roomN1ame = f'file_{idFile}'
             if userName == secondUserName:
                 msg = None
             else:
@@ -843,9 +845,12 @@ def check_and_close_room(room):
 
 @socketio.on('start_task')
 def start_task():
-    global isHandling
-    if (not isHandling):
-        isHandling = True
+    
+    isHandling = rd.get("isHandling")
+
+    print(f'start_task with isHandling {isHandling}')
+    if isHandling == 'False':
+        rd.set("isHandling", "True")
         print('on start task in backend')
         my_task.delay()
         # thay thế xem chạy được không?
@@ -867,8 +872,8 @@ def notify_file_executed_done(file):
     # socketio.emit("on_file_execute_done", {'fileTitle': fileTitle}, to=userId)
 
 def onDoneAll():
-    global isHandling
-    isHandling = False
+    rd.set("isHandling", "False")
+    isHandling = rd.get("isHandling").decode('utf-8')
     print(f"Task Done All, isHandling = {isHandling}")
 
 @app.errorhandler(500)
