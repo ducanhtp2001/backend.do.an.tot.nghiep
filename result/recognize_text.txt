@@ -1,60 +1,72 @@
-Java: Ngôn Ngữ Lập Trình Đa Năng và Mạnh Mẽ
+HỌC VIEKIIVỸ YINÀ
+HỌI ĐỒNG €HÁM†
 
-Java, được phát triển bởi Sun Microsystems vào năm 1995 và hiện nay thuộc sở hữu của
-Oracle Corporation, là một trong những ngôn ngữ lập trình phổ biến nhất thế giới. Với triết
-lý "viết một lần, chạy mọi nơi" (write once, run anywhere), Java đã chứng minh được tính
-linh hoạt và mạnh mẽ trong nhiều lĩnh vực công nghệ.
+MẶT MÀ
+/ : /à Nội, ngày
 
-Lý Do Java Được Ưu Chuộng
+HƯỚNG
 
-1. Tính Di Động Cao: Một trong những đặc điểm nổi bật nhất của Java là tính di động.
-Nhờ vào Java Virtual Machine (JVM), mã Java có thể chạy trên bất kỳ nền tảng nào mà
-không cần phải biên dịch lại. Điều này làm cho Java trở thành lựa chọn lý tưởng cho các
-ứng dụng đa nền tảng.
+Hình thức đồ án
 
-2. Hệ Sinh Thái Thư Viện và Framework Phong Phú: Java có một hệ sinh thái phong phú
-với nhiều thư viện và frAmework mạnh mẽ. Các thư viện này hỗ trợ từ phát triển ứng dụng
-web, di động, đến các hệ thống phân tán. Một số frAmework nổi bật bao gồm Spring,
-Hibernate, và JavaServer Faces (JSP).
+và tài liệu thum khảo
 
-3. Hiệu Suất Cao và Bảo Mật: Java được thiết kế với hiệu suất và bảo mật cao. Các cơ chế
-quản lý bộ nhớ tự động, như Garbage Collection, giúp tối ưu hóa hiệu suất của ứng dụng.
-Ngoài ra, Java còn cung cấp các công cụ bảo mật mạnh mẽ để bảo vệ ứng dụng khỏi các
-lỗ hổng bảo mật.
+: VIỔt tđắ0), chính tả _
+_Nội dung ( y đồ án
+Jính ÚìỜl sự, ý nghĩa Uu,ro …,n của m. uh
 
-4. Cộng Đồng Hỗ Trợ Lớn: Java có một cộng đồng lập trình viên rộng lớn và nhiệt tình.
-Điều này đồng nghĩa với việc có nhiều tài liệu, khóa học, diễn đàn, và dự án mã nguồn mở
-để hỗ trợ các lập trình viên, từ người mới bắt đầu đến những chuyên gia.
+hổ blốn của các tài liệu tham khảo): _
 
-Các Ứng Dụng Thực Tế của Java
+DẪN CHÁM ĐIỂM ĐÓ ÁN TÓT NGHIỆP ĐẠI HỌC
 
-1. Phát Triển Ứng Dụng Doanh Nghiệp: Java là lựa chọn hàng đầu cho các ứng dụng
-doanh nghiệp nhờ vào sự ổn định và khả năng mở rộng cao. Các frAmework như Spring và
-Hibernate giúp xây dựng các hệ thống quản lý doanh nghiệp, hệ thống ERP và CRM mạnh
-mẽ.
+kết quả mang tính mới __
 
-2. Ứng Dụng Di Động: Java là ngôn ngữ chính cho phát triển ứng dụng Android. Với
-Android SDK, các lập trình viên có thể xây dựng các ứng dụng di động phong phú và hiệu
-quả cho hàng triệu thiết bị Android trên toàn thế giới.
+nghiệp.
 
-3. Phát Triển Web: Java cũng được sử dụng rộng rãi trong phát triển web. Các công nghệ
-như JavaServer Pages (JSP), Servlets, và các frAmework như Spring MVC giúp xây dựng các
-ứng dụng web mạnh mẽ, an toàn và dễ bảo trì.
-4. Hệ Thống Phân Tán và Cloud: Java là một lựa chọn phổ biến cho các hệ thống phân
-tán và dịch vụ cloud. Các công cụ như Apache Kafka, Apache Hadoop, và các dịch vụ cloud
-của Amazon Web Services (AWS) và Google Cloud Platform (GCP) hỗ trợ mạnh mẽ cho việc
-xây dựng và triển khai các ứng dụng phân tán.
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+Độc lập — Tự đo — Hạnh phúc
+lháng 6 năm 2024
 
-5. Internet of Things (loT): Java cũng đang ngày càng được sử dụng trong lĩnh vực
-Internet of Things (loT). Với khả năng chạy trên nhiều thiết bị và hệ thống khác nhau, Java
-giúp xây dựng các ứng dụng loT từ các thiết bị cảm biến nhỏ đến các hệ thống điều khiển
-phức tạp.
++Không có kết quả thực nghiệm.
 
-Kết Luận
+3.1 | Nội dung của tài liệu trình bày (slide) rõ ràng, khoa học
 
-Java đã và đang là một ngôn ngữ lập trình quan trọng trong ngành công nghệ thông tin.
-Với tính di động cao, hệ sinh thái phong phú, hiệu suất và bảo mật, Java không chỉ là lựa
-chọn lý tưởng cho các ứng dụng doanh nghiệp và di động, mà còn mở rộng sang các lĩnh
-vực như phát triển web, hệ thống phân tán và loT. Sự hỗ trợ mạnh mẽ từ cộng đồng và các
-công ty lớn càng làm cho Java trở thành một công cụ mạnh mẽ và linh hoạt cho mọi lập
-trình viên.
+32
+
+4.] | Hiểu đúng câu hỏi
+
+Trả lời đúng và đủ ý cho các câu hỏi
+
+Tiâu cl Thang | Cho
+ÌL ú điểm | điểm '
+15
+Văn phong trong sáng, lập hlẠn d1ặt chẽ, tham chiếu hình võ, bảng biểu 10
+ịnh mmg đồ án m…b quy cách (phông chữ, căn lỗ, cách dòng, đánh số, 5
+35
+J lên củi _5
+Dộ )ộ khó của để tài (căn cứ mục tiêu đ tài, kết quả đạt được và mức độ 10
++ Để tài chỉ nghiên cứu lý H1uyếtỳývg 59 Mnh số hẹu r1ưa re @l Mcm 0
++ Để tài có nghiên cứu lý thuyết và có kel quả dữ liệu ữzuc nghiệm. 4
++ Để tài có nghiên cứu lý thuyết, có kết quả dữ liệu thực nghiệm và có . |- 6 -
+4 - .
++ Đề tài có mg/uen cứu b H1uyel có kết ‹ Wa d liệu dhực nghiệm, có kết
+quả mang tÍnh mới và có khá năng ứng dụng thực lế ngoài đơn vị/doanh 10
+Sự cân đôi dung lượng giữa các chương: nội dung từng chương bám sát thm
+23 Ñ ñ 109
+mục tiệu của đô án . - n
+2.4 | Sử dụng công cụ phù hợp đề tiền hành thực nghiệm và kết quả đạt được: | 10
+0
++ Có mô tả phương thức thực nghiệm, không có dữ liệu thực nghiệm. 5
++ Có mô tả phương thức thực nghiệm, có kết quả thực nghiệm. 70
+3__| Trình bày tóm tắt nội dung đồ án 120 .
+10
+Trình bảy lưu loát, chính xác, logic, tuân thủ thời lượng 10
+4 | Trã lời câu hồi của người phần biện và thành viên hội đồng 30
+5
+1 _
+25
+TỎNG 100
+
+Điểm kết luận:.......................nnnnnnnennsnnnrne
+(Qui về điểm 10, làm tròn đến một chữ số thập phân)
+
+HỘI ĐÒNG CHÁM ĐIỂM ĐÔ ÁN TÓT NGHIỆP

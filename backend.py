@@ -16,7 +16,7 @@ import ultil
 
 rd = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
-isHandling = rd.set("isHandling", "False")
+isHandling = False
 
 UPLOAD_FOLDER = 'D:/com.backend.do.an.tot.nghiep/file_folder'
 UPLOAD_AVATAR = 'D:/com.backend.do.an.tot.nghiep/avatar'
@@ -803,13 +803,13 @@ def socket_logout(data):
     for idf in list_id_file_follower:
         room_name = f'file_{idf}'
         leave_room(room_name)
-        check_and_close_room(room_name)
+        # check_and_close_room(room_name)
         print(f'user {id} join to room: {room_name}')
 
     for idf in list_id_follower:
         room_name = f'follow_{idf}'
         leave_room(room_name)
-        check_and_close_room(room_name)
+        # check_and_close_room(room_name)
         print(f'user {id} join to room: {room_name}')
     
     msg = "logout Success"
@@ -846,11 +846,11 @@ def check_and_close_room(room):
 @socketio.on('start_task')
 def start_task():
     
-    isHandling = rd.get("isHandling")
+    global isHandling
 
     print(f'start_task with isHandling {isHandling}')
-    if isHandling == 'False':
-        rd.set("isHandling", "True")
+    if isHandling == False:
+        isHandling = True
         print('on start task in backend')
         my_task.delay()
         # thay thế xem chạy được không?
@@ -872,8 +872,8 @@ def notify_file_executed_done(file):
     # socketio.emit("on_file_execute_done", {'fileTitle': fileTitle}, to=userId)
 
 def onDoneAll():
-    rd.set("isHandling", "False")
-    isHandling = rd.get("isHandling").decode('utf-8')
+    global isHandling 
+    isHandling = False
     print(f"Task Done All, isHandling = {isHandling}")
 
 @app.errorhandler(500)
